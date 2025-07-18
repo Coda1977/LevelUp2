@@ -262,10 +262,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Build prompt for OpenAI
       const prompt = `You are a management coach. Here is some learning content:\n${context}\n\nUser question: ${message}\n\nInstructions:\n- Answer the user's question based on the above content.\n- Do NOT copy the content verbatim.\n- At the end, add a reference link to the relevant chapter(s) in this format: ${references}`;
 
+      // Get existing chat session
+      const session = await storage.getUserChatSession(userId);
+      const existingMessages = Array.isArray(session?.messages) ? session.messages : [];
+
+      // Add user message
+      const messages = [
+        ...existingMessages,
+        { role: 'user', content: message, timestamp: new Date().toISOString() }
+      ];
+
       // Get AI response (OpenAI)
       const aiResponse = await getOpenAIChatResponse(prompt);
 
-      // Save to chat history as before (optional, not shown here)
+      // Add AI response
+      const updatedMessages = [
+        ...messages,
+        { role: 'assistant', content: aiResponse, timestamp: new Date().toISOString() }
+      ];
+
+      // Save to database
+      await storage.updateChatSession(userId, updatedMessages);
 
       res.json({ message: aiResponse });
     } catch (error) {
