@@ -37,25 +37,16 @@ function Router() {
     <div className="min-h-screen bg-[var(--bg-primary)]">
       <Navigation />
       <Switch>
-        {!isAuthenticated ? (
-          <>
-            <Route path="/" component={Landing} />
-            <Route component={Landing} />
-          </>
-        ) : (
-          <>
-            <Route path="/" component={Dashboard} />
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/learn" component={Learn} />
-            <Route path="/chat" component={Chat} />
-            <Route path="/tools" component={Tools} />
-            <Route path="/analytics" component={Analytics} />
-            <Route path="/team" component={Team} />
-            <Route path="/admin" component={Admin} />
-            <Route path="/chapter/:slug" component={Chapter} />
-            <Route component={NotFound} />
-          </>
-        )}
+        <Route path="/" component={!isAuthenticated ? Landing : Dashboard} />
+        <Route path="/dashboard" component={isAuthenticated ? Dashboard : Landing} />
+        <Route path="/learn" component={isAuthenticated ? Learn : Landing} />
+        <Route path="/chat" component={isAuthenticated ? Chat : Landing} />
+        <Route path="/tools" component={isAuthenticated ? Tools : Landing} />
+        <Route path="/analytics" component={isAuthenticated ? Analytics : Landing} />
+        <Route path="/team" component={isAuthenticated ? Team : Landing} />
+        <Route path="/admin" component={isAuthenticated ? Admin : Landing} />
+        <Route path="/chapter/:slug" component={isAuthenticated ? Chapter : Landing} />
+        <Route component={NotFound} />
       </Switch>
     </div>
   );
