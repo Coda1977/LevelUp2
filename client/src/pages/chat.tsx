@@ -128,9 +128,17 @@ export default function Chat() {
   const handleNewChat = () => {
     const newId = chatNameCounter.toString();
     const newChatName = `New Chat ${chatNameCounter}`;
-    setSessions([{ id: newId, name: newChatName, summary: '' }, ...sessions]);
+    const newSession = { id: newId, name: newChatName, summary: '' };
+    
+    // Add new session to the beginning of the list
+    setSessions(prev => [newSession, ...prev]);
+    
+    // Switch to the new chat immediately
     setSelectedSessionId(newId);
+    
+    // Increment counter for next chat
     setChatNameCounter(prev => prev + 1);
+    
     // In real code, also create session in backend
   };
 
