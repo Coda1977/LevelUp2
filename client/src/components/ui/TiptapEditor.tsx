@@ -3,20 +3,11 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
-import Blockquote from "@tiptap/extension-blockquote";
-import HorizontalRule from "@tiptap/extension-horizontal-rule";
-import Heading from "@tiptap/extension-heading";
-import BulletList from "@tiptap/extension-bullet-list";
-import OrderedList from "@tiptap/extension-ordered-list";
-import ListItem from "@tiptap/extension-list-item";
-import { Table } from "@tiptap/extension-table";
-import TableRow from "@tiptap/extension-table-row";
-import TableCell from "@tiptap/extension-table-cell";
-import TableHeader from "@tiptap/extension-table-header";
-import Image from "@tiptap/extension-image";
-import Highlight from "@tiptap/extension-highlight";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
+import { Table, TableRow, TableCell, TableHeader } from "@tiptap/extension-table";
+import { Image } from "@tiptap/extension-image";
+import { Highlight } from "@tiptap/extension-highlight";
+import { TaskList } from "@tiptap/extension-task-list";
+import { TaskItem } from "@tiptap/extension-task-item";
 
 interface TiptapEditorProps {
   value: string;
@@ -27,15 +18,17 @@ interface TiptapEditorProps {
 export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, placeholder }) => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable default extensions that we want to configure separately
+        blockquote: false,
+        horizontalRule: false,
+        heading: false,
+        bulletList: false,
+        orderedList: false,
+        listItem: false,
+      }),
       Underline,
       Link.configure({ openOnClick: false }),
-      Blockquote,
-      HorizontalRule,
-      Heading.configure({ levels: [1, 2, 3] }),
-      BulletList,
-      OrderedList,
-      ListItem,
       Table.configure({ resizable: true }),
       TableRow,
       TableCell,
