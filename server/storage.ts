@@ -239,7 +239,11 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updated;
     } else {
-      return await this.createChatSession({ userId, messages });
+      return await this.createChatSession({ 
+        userId, 
+        name: "Chat Session",
+        messages 
+      });
     }
   }
 
