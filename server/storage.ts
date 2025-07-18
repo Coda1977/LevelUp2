@@ -220,12 +220,11 @@ export class DatabaseStorage implements IStorage {
     return newSession;
   }
 
-  async updateChatSession(userId: string, messages: any[]): Promise<ChatSession> {
+  async updateChatSession(userId: string, sessionId: string, messages: any[]): Promise<ChatSession> {
     const existing = await db
       .select()
       .from(chatSessions)
-      .where(eq(chatSessions.userId, userId))
-      .orderBy(desc(chatSessions.updatedAt))
+      .where(and(eq(chatSessions.userId, userId), eq(chatSessions.sessionId, sessionId)))
       .limit(1);
 
     if (existing.length > 0) {
@@ -241,18 +240,18 @@ export class DatabaseStorage implements IStorage {
     } else {
       return await this.createChatSession({ 
         userId, 
+        sessionId,
         name: "Chat Session",
         messages 
       });
     }
   }
 
-  async getUserChatSession(userId: string): Promise<ChatSession | undefined> {
+  async getUserChatSession(userId: string, sessionId: string): Promise<ChatSession | undefined> {
     const [session] = await db
       .select()
       .from(chatSessions)
-      .where(eq(chatSessions.userId, userId))
-      .orderBy(desc(chatSessions.updatedAt))
+      .where(and(eq(chatSessions.userId, userId), eq(chatSessions.sessionId, sessionId)))
       .limit(1);
     return session;
   }

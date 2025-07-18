@@ -225,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const sessionId = req.params.sessionId;
-      const session = await storage.getUserChatSession(`${userId}_${sessionId}`);
+      const session = await storage.getUserChatSession(userId, sessionId);
       res.json(session?.messages || []);
     } catch (error) {
       console.error("Error fetching chat history:", error);
@@ -268,8 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const prompt = `You are a management coach. Here is some learning content:\n${context}\n\nUser question: ${message}\n\nInstructions:\n- Answer the user's question based on the above content.\n- Do NOT copy the content verbatim.\n- At the end, add a reference link to the relevant chapter(s) in this format: ${references}`;
 
       // Get existing chat session
-      const userSessionId = `${userId}_${sessionId}`;
-      const session = await storage.getUserChatSession(userSessionId);
+      const session = await storage.getUserChatSession(userId, sessionId);
       const existingMessages = Array.isArray(session?.messages) ? session.messages : [];
 
       // Add user message
@@ -288,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       // Save to database
-      await storage.updateChatSession(userSessionId, updatedMessages);
+      await storage.updateChatSession(userId, sessionId, updatedMessages);
 
       res.json({ message: aiResponse });
     } catch (error) {

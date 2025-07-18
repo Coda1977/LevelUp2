@@ -87,12 +87,15 @@ export const sharedChapters = pgTable("shared_chapters", {
 export const chatSessions = pgTable("chat_sessions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").references(() => users.id),
+  sessionId: varchar("session_id").notNull(),
   name: varchar("name").notNull(), // session title
   summary: varchar("summary"), // optional short description
   messages: jsonb("messages").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  userSessionIdx: index("chat_sessions_user_session_idx").on(table.userId, table.sessionId),
+}));
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
