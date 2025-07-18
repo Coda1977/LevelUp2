@@ -26,6 +26,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, pla
         bulletList: false,
         orderedList: false,
         listItem: false,
+        link: false, // We're using Link extension separately
       }),
       Underline,
       Link.configure({ openOnClick: false }),

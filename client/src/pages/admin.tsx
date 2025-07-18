@@ -189,7 +189,7 @@ export default function Admin() {
       slug: chapter.slug,
       description: chapter.description,
       content: chapter.content,
-      categoryId: chapter.categoryId.toString(),
+      categoryId: chapter.categoryId?.toString() || "",
       chapterNumber: chapter.chapterNumber,
       estimatedMinutes: chapter.estimatedMinutes,
       podcastUrl: chapter.podcastUrl || "",
