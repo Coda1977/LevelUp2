@@ -48,7 +48,7 @@ export default function Chat() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: messages = [] } = useQuery<Message[]>({
+  const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
     queryKey: ["/api/chat/history", selectedSessionId],
     queryFn: () => fetch(`/api/chat/history/${selectedSessionId}`).then(res => res.json()),
     enabled: isAuthenticated && !!selectedSessionId,
@@ -102,6 +102,15 @@ export default function Chat() {
 
   const sendMessage = () => {
     if (!inputMessage.trim() || sendMessageMutation.isPending) return;
+    
+    // Immediately add user message to UI for responsive feel
+    const userMessage = { 
+      role: 'user' as const, 
+      content: inputMessage, 
+      timestamp: new Date().toISOString() 
+    };
+    
+    // Start the mutation
     sendMessageMutation.mutate(inputMessage);
   };
 
