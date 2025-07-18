@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Coach - Level Up</title>
+    <style>
+        :root {
+            --bg-primary: #F5F0E8;
+            --text-primary: #1A1A1A;
+            --accent-yellow: #FFD60A;
+            --accent-blue: #003566;
+            --text-secondary: #4A4A4A;
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Typography */
+        .hero-headline {
+            font-size: clamp(36px, 6vw, 48px);
+            font-weight: 900;
+            letter-spacing: -1px;
+            line-height: 1.1;
+        }
+
+        .section-header {
+            font-size: clamp(24px, 4vw, 32px);
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .body-text {
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        /* Navigation */
+        nav {
+            padding: 24px 0;
+            background-color: var(--white);
+            border-bottom: 1px solid #E5E5E5;
+            flex-shrink: 0;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: baseline;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-up {
+            position: relative;
+            top: -6px;
+            margin-left: 3px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 0 4px;
+        }
+
+        .nav-links::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 15px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+            transform: translateY(-1px);
+        }
+
+        .nav-link.ai-coach {
+            background-color: var(--accent-yellow);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .nav-link.ai-coach:hover {
+            background-color: var(--accent-blue);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: var(--accent-yellow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 88px);
+        }
+
+        /* Chat Header */
+        .chat-header {
+            background-color: var(--white);
+            padding: 32px;
+            border-bottom: 1px solid #E5E5E5;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .chat-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: linear-gradient(45deg, var(--text-primary), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .chat-subtitle {
+            color: var(--text-secondary);
+            font-size: 18px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Chat Messages Area */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            scrollbar-width: thin;
+            scrollbar-color: #E5E5E5 transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background-color: #E5E5E5;
+            border-radius: 3px;
+        }
+
+        /* Welcome State */
+        .chat-welcome {
+            text-align: center;
+            padding: 60px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            background-color: var(--white);
+            border: 3px solid var(--text-primary);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            position: relative;
+        }
+
+        .welcome-icon::before {
+            content: "∞";
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--text-primary);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            line-height: 1;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .welcome-description {
+            color: var(--text-secondary);
+            font-size: 18px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        /* Starter Prompts */
+        .starter-prompts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .starter-prompt {
+            background-color: var(--white);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #E5E5E5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .starter-prompt:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-yellow);
+        }
+
+        .prompt-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .prompt-preview {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* Message Bubbles */
+        .message {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message.ai .message-avatar {
+            background-color: var(--white);
+            border: 2px solid var(--text-primary);
+            color: var(--text-primary);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .message.ai .message-avatar::before {
+            content: "∞";
+        }
+
+        .message.user .message-avatar {
+            background-color: var(--accent-yellow);
+            color: var(--text-primary);
+        }
+
+        .message-content {
+            max-width: 70%;
+            background-color: var(--white);
+            padding: 16px 20px;
+            border-radius: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+
+        .message.user .message-content {
+            background-color: var(--accent-blue);
+            color: var(--white);
+        }
+
+        .message-text {
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+
+        .message.user .message-time {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Chapter Links in Messages */
+        .chapter-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--bg-primary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            color: var(--text-primary);
+            margin: 8px 4px 0 0;
+            transition: all 0.3s ease;
+        }
+
+        .chapter-link:hover {
+            background-color: var(--accent-yellow);
+            transform: scale(1.05);
+        }
+
+        .message.user .chapter-link {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: var(--white);
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            background-color: var(--white);
+            padding: 24px 32px;
+            border-top: 1px solid #E5E5E5;
+            flex-shrink: 0;
+        }
+
+        .chat-input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Auto-resize textarea and mobile optimization */
+        .chat-input {
+            width: 100%;
+            padding: 16px 60px 16px 20px;
+            border: 2px solid #E5E5E5;
+            border-radius: 25px;
+            font-size: 16px;
+            font-family: inherit;
+            background-color: var(--white);
+            transition: all 0.3s ease;
+            resize: none;
+            min-height: 56px;
+            max-height: 120px;
+            line-height: 1.5;
+            -webkit-appearance: none;
+            -webkit-border-radius: 25px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-yellow);
+            box-shadow: 0 0 0 3px rgba(255, 214, 10, 0.1);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .send-button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background-color: var(--accent-blue);
+            color: var(--white);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background-color: var(--accent-yellow);
+            color: var(--text-primary);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding-bottom: 4px;
+        }
+
+        .quick-actions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .quick-action {
+            background-color: var(--bg-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+            border: 1px solid transparent;
+        }
+
+        .quick-action:hover {
+            background-color: var(--accent-yellow);
+            transform: translateY(-1px);
+        }
+
+        /* Mobile Navigation */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--white);
+            border-top: 1px solid #E5E5E5;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 12px;
+            padding: 8px;
+            min-width: 60px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-nav-item.active {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .mobile-nav-icon {
+            font-size: 16px;
+            margin-bottom: 4px;
+            font-weight: 900;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 900px;
+                padding: 0 24px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .chat-header {
+                padding: 20px;
+            }
+
+            .chat-title {
+                font-size: 28px;
+            }
+
+            .chat-subtitle {
+                font-size: 16px;
+            }
+
+            .chat-messages {
+                padding: 16px;
+                gap: 20px;
+            }
+
+            .chat-input-container {
+                padding: 16px 20px 20px;
+            }
+
+            .chat-welcome {
+                padding: 32px 16px;
+            }
+
+            .starter-prompts {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .message-content {
+                max-width: 80%;
+                padding: 14px 16px;
+                font-size: 15px;
+            }
+
+            .quick-actions {
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+
+            .quick-action {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+
+            .chat-container {
+                height: calc(100vh - 88px - 80px);
+            }
+
+            .mobile-nav {
+                display: block;
+            }
+
+            .welcome-icon {
+                width: 64px;
+                height: 64px;
+            }
+
+            .welcome-icon::before {
+                font-size: 26px;
+            }
+
+            .message.ai .message-avatar {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .chat-header {
+                padding: 16px;
+            }
+
+            .chat-messages {
+                padding: 12px;
+                gap: 16px;
+            }
+
+            .chat-input-container {
+                padding: 12px 16px 16px;
+            }
+
+            .chat-welcome {
+                padding: 24px 12px;
+            }
+
+            .welcome-title {
+                font-size: 24px;
+            }
+
+            .welcome-description {
+                font-size: 16px;
+            }
+
+            .starter-prompt {
+                padding: 16px;
+            }
+
+            .prompt-title {
+                font-size: 15px;
+            }
+
+            .prompt-preview {
+                font-size: 13px;
+            }
+
+            .message-content {
+                max-width: 85%;
+                padding: 12px 14px;
+                font-size: 15px;
+            }
+
+            .chat-input {
+                padding: 12px 50px 12px 16px;
+                font-size: 16px;
+                min-height: 48px;
+            }
+
+            .send-button {
+                width: 32px;
+                height: 32px;
+                right: 8px;
+            }
+
+            .send-button svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 12px;
+            }
+
+            .chat-header {
+                padding: 12px;
+            }
+
+            .chat-title {
+                font-size: 24px;
+            }
+
+            .chat-subtitle {
+                font-size: 15px;
+            }
+
+            .chat-messages {
+                padding: 8px;
+                gap: 12px;
+            }
+
+            .chat-input-container {
+                padding: 8px 12px 12px;
+            }
+
+            .chat-welcome {
+                padding: 20px 8px;
+            }
+
+            .welcome-title {
+                font-size: 22px;
+                margin-bottom: 12px;
+            }
+
+            .welcome-description {
+                font-size: 15px;
+                margin-bottom: 24px;
+            }
+
+            .starter-prompts {
+                gap: 8px;
+                margin-bottom: 24px;
+            }
+
+            .starter-prompt {
+                padding: 12px;
+            }
+
+            .message-content {
+                max-width: 90%;
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            .message-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+
+            .message.ai .message-avatar {
+                font-size: 12px;
+            }
+
+            .chat-input {
+                padding: 10px 40px 10px 14px;
+                font-size: 16px;
+                min-height: 44px;
+                border-radius: 22px;
+            }
+
+            .send-button {
+                width: 28px;
+                height: 28px;
+                right: 8px;
+            }
+
+            .send-button svg {
+                width: 14px;
+                height: 14px;
+            }
+
+            .quick-actions {
+                gap: 6px;
+                margin-bottom: 8px;
+            }
+
+            .quick-action {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+
+            .welcome-icon {
+                width: 56px;
+                height: 56px;
+                margin-bottom: 16px;
+            }
+
+            .welcome-icon::before {
+                font-size: 22px;
+            }
+
+            .nav-container {
+                padding: 0 4px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            .chapter-link {
+                padding: 4px 8px;
+                font-size: 12px;
+                margin: 4px 2px 0 0;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .chat-header {
+                padding: 8px;
+            }
+
+            .chat-messages {
+                padding: 6px;
+            }
+
+            .chat-input-container {
+                padding: 6px 8px 8px;
+            }
+
+            .chat-welcome {
+                padding: 16px 6px;
+            }
+
+            .starter-prompt {
+                padding: 10px;
+            }
+
+            .message-content {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+
+            .chat-input {
+                padding: 8px 36px 8px 12px;
+                min-height: 40px;
+                border-radius: 20px;
+            }
+
+            .send-button {
+                width: 24px;
+                height: 24px;
+                right: 6px;
+            }
+
+            .send-button svg {
+                width: 12px;
+                height: 12px;
+            }
+        }
+
+        /* Enhanced touch targets for mobile */
+        @media (max-width: 768px) {
+            .starter-prompt {
+                min-height: 48px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .quick-action {
+                min-height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .send-button {
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
+
+        /* Improved scrolling on mobile */
+        @media (max-width: 768px) {
+            .chat-messages {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .quick-actions {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="nav-container">
+                <a href="/dashboard" class="logo">Level<span class="logo-up">Up</span></a>
+                <div class="nav-links">
+                    <a href="/dashboard" class="nav-link">Dashboard</a>
+                    <a href="/learn" class="nav-link">Learn</a>
+                    <a href="/tools" class="nav-link">Tools</a>
+                    <a href="/chat" class="nav-link ai-coach active">AI Coach</a>
+                </div>
+                <div class="user-menu">
+                    <div class="user-avatar">JS</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Chat Container -->
+    <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <h1 class="chat-title">Your AI Management Coach</h1>
+            <p class="chat-subtitle">Get personalized guidance on leadership challenges. I know all the Level Up content and can help you apply it to your specific situations.</p>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Welcome State -->
+            <div class="chat-welcome" id="welcomeState">
+                <div class="welcome-icon"></div>
+                <h2 class="welcome-title">Hey Jordan! Ready to tackle some management challenges?</h2>
+                <p class="welcome-description">Ask me about any leadership situation. I know all the Level Up content and can help you apply it.</p>
+                
+                <div class="starter-prompts">
+                    <div class="starter-prompt" onclick="sendMessage('How do I give feedback to someone who gets defensive?')">
+                        <div class="prompt-title">Difficult Feedback</div>
+                        <div class="prompt-preview">How do I give feedback to someone who gets defensive?</div>
+                    </div>
+                    <div class="starter-prompt" onclick="sendMessage('I want to delegate more but I\'m worried about quality. Any advice?')">
+                        <div class="prompt-title">Delegation Fears</div>
+                        <div class="prompt-preview">I want to delegate more but I'm worried about quality. Any advice?</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Example conversation (hidden by default) -->
+            <div id="conversationMessages" style="display: none;">
+                <!-- Messages will be added here dynamically -->
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+            <div class="quick-actions">
+                <div class="quick-action" onclick="sendMessage('Help me with delegation')">Delegation help</div>
+                <div class="quick-action" onclick="sendMessage('Feedback techniques')">Feedback tips</div>
+                <div class="quick-action" onclick="sendMessage('Team motivation')">Motivation advice</div>
+                <div class="quick-action" onclick="sendMessage('1:1 meeting ideas')">1:1 ideas</div>
+                <div class="quick-action" onclick="sendMessage('What should I read next?')">What to read next</div>
+            </div>
+            <div class="chat-input-wrapper">
+                <textarea 
+                    id="chatInput" 
+                    class="chat-input" 
+                    placeholder="Ask about delegation, feedback, motivation, or any leadership challenge..."
+                    rows="1"
+                ></textarea>
+                <button class="send-button" id="sendButton" onclick="sendMessage()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav">
+        <div class="mobile-nav-items">
+            <a href="/dashboard" class="mobile-nav-item">
+                <span class="mobile-nav-icon">■</span>
+                Dashboard
+            </a>
+            <a href="/learn" class="mobile-nav-item">
+                <span class="mobile-nav-icon">□</span>
+                Learn
+            </a>
+            <a href="/tools" class="mobile-nav-item">
+                <span class="mobile-nav-icon">○</span>
+                Tools
+            </a>
+            <a href="/chat" class="mobile-nav-item active">
+                <span class="mobile-nav-icon">◇</span>
+                AI Coach
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        let conversationStarted = false;
+
+        // Auto-resize textarea
+        const chatInput = document.getElementById('chatInput');
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Send message on Enter (but allow Shift+Enter for new lines)
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Prevent zoom on iOS when focusing input
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+            chatInput.addEventListener('focus', function() {
+                this.style.fontSize = '16px';
+            });
+        }
+
+        function sendMessage(predefinedMessage = null) {
+            const input = document.getElementById('chatInput');
+            const message = predefinedMessage || input.value.trim();
+            
+            if (!message) return;
+
+            // Hide welcome state and show conversation
+            if (!conversationStarted) {
+                document.getElementById('welcomeState').style.display = 'none';
+                document.getElementById('conversationMessages').style.display = 'block';
+                conversationStarted = true;
+            }
+
+            // Add user message
+            addMessage(message, 'user');
+            
+            // Clear input
+            if (!predefinedMessage) {
+                input.value = '';
+                input.style.height = 'auto';
+            }
+
+            // Simulate AI response after a delay
+            setTimeout(() => {
+                const aiResponse = generateAIResponse(message);
+                addMessage(aiResponse, 'ai');
+            }, 1000 + Math.random() * 1000);
+        }
+
+        function addMessage(content, sender) {
+            const messagesContainer = document.getElementById('conversationMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${sender === 'ai' ? '' : 'JS'}</div>
+                <div class="message-content">
+                    <p class="message-text">${content}</p>
+                    <div class="message-time">${timeString}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function generateAIResponse(userMessage) {
+            const responses = {
+                'feedback': `Great question! Based on the Feedback chapter, here are three key strategies:
+
+**1. Focus on the behavior, not the person.** Instead of "You're always late," try "I noticed you've been 10-15 minutes late to our last three meetings."
+
+**2. Use the SBI model:** Situation-Behavior-Impact. "In yesterday's client meeting (S), when you interrupted the client twice (B), they seemed frustrated and cut the meeting short (I)."
+
+**3. Make it a conversation, not a lecture.** Ask "What's your perspective on this?" and really listen.
+
+<a href="/chapter/feedback" class="chapter-link">📖 Review Feedback Chapter</a>`,
+
+                'delegation': `Delegation anxiety is totally normal! Here's how to start small and build confidence:
+
+**Start with the RACI framework** from the Delegation chapter. For every task, be crystal clear on who is:
+- **Responsible** (does the work)
+- **Accountable** (owns the outcome - usually you)
+- **Consulted** (provides input)
+- **Informed** (gets updates)
+
+**Try this week:** Pick one recurring task that takes you 30+ minutes. Choose someone who could learn this skill. Set up clear check-ins at 25%, 50%, and 75% completion.
+
+Remember: delegation isn't dumping work - it's developing people while freeing yourself for higher-level responsibilities.
+
+<a href="/chapter/delegation" class="chapter-link">📖 Review Delegation Chapter</a>`,
+
+                'motivation': `Disengagement often comes from a mismatch between the work and what motivates them. Let's dig deeper:
+
+**First, have a real conversation.** Ask: "What parts of your work energize you most? What drains you?" Listen without trying to fix immediately.
+
+**Look for Total Motivation factors:**
+- **Purpose:** Do they see how their work matters?
+- **Potential:** Are they growing and learning?
+- **Play:** Do they enjoy any aspects of the work?
+
+**Quick win:** Give them choice in how they accomplish their goals. Even small choices (when to do tasks, which order, etc.) can boost engagement.
+
+<a href="/chapter/total-motivation" class="chapter-link">📖 Review Total Motivation</a>
+<a href="/chapter/coaching" class="chapter-link">📖 Review Coaching</a>`,
+
+                'default': `That's a thoughtful question! Based on what you've learned in Level Up, here are some key principles to consider:
+
+**Remember your #1 role:** You're here to multiply your team's impact, not do all the work yourself.
+
+**Think Author vs. Editor:** Are you creating new solutions (author mode) or refining existing work (editor mode)? Both are valuable, but knowing which one you need helps you choose the right approach.
+
+**When in doubt, coach first:** Ask powerful questions before giving answers. "What do you think the next step should be?" often works better than immediately jumping in with solutions.
+
+What specific aspect of this situation would you like to explore further?
+
+<a href="/chapter/your-number-1-role" class="chapter-link">📖 Your #1 Role</a>
+<a href="/chapter/coaching" class="chapter-link">📖 Coaching Chapter</a>`
+            };
+
+            const message = userMessage.toLowerCase();
+            if (message.includes('feedback') || message.includes('defensive')) return responses.feedback;
+            if (message.includes('delegate') || message.includes('delegation')) return responses.delegation;
+            if (message.includes('motivat') || message.includes('disengag')) return responses.motivation;
+            return responses.default;
+        }
+    </script>
+</body>
+</html>
