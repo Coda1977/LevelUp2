@@ -47,21 +47,18 @@ export async function getChatResponse(
   }
 }
 
-export async function getOpenAIChatResponse(prompt: string): Promise<string> {
+export async function getOpenAIChatResponse(systemPrompt: string, userMessage: string): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
       model: DEFAULT_MODEL_STR,
       messages: [
         {
           role: 'system',
-          content: `You are an AI mentor for Level Up, a management development platform. 
-            You help managers apply management concepts to real workplace situations. 
-            Be practical, supportive, and reference specific Level Up content when relevant.
-            Keep responses conversational and actionable.`
+          content: systemPrompt
         },
         {
           role: 'user',
-          content: prompt
+          content: userMessage
         }
       ],
       max_tokens: 1024,
