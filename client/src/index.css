@@ -165,10 +165,16 @@
   font-weight: 600;
 }
 
-.nav-link.ai-coach {
+.nav-link.ai-coach.active {
   background-color: var(--accent-yellow);
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.nav-link.ai-coach:not(.active) {
+  background-color: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .nav-link.ai-coach:hover {
