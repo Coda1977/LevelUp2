@@ -130,6 +130,33 @@ export default function Chat() {
     // In real code, also create session in backend
   };
 
+  // Delete chat handler
+  const handleDeleteChat = (chatId: string) => {
+    if (sessions.length <= 1) {
+      toast({
+        title: "Cannot delete",
+        description: "You must have at least one chat session.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const updatedSessions = sessions.filter(s => s.id !== chatId);
+    setSessions(updatedSessions);
+    
+    // If we deleted the currently selected chat, switch to the first remaining one
+    if (selectedSessionId === chatId) {
+      setSelectedSessionId(updatedSessions[0].id);
+    }
+    
+    toast({
+      title: "Chat deleted",
+      description: "Your chat session has been removed.",
+    });
+    
+    // In real code, also delete from backend
+  };
+
   const starterPrompts = [
     {
       title: 'Delegation Help',
@@ -180,11 +207,23 @@ export default function Chat() {
           {sessions.map(session => (
             <div
               key={session.id}
-              className={`p-3 rounded-lg mb-2 cursor-pointer transition border ${selectedSessionId === session.id ? 'bg-[var(--accent-blue)] text-white border-[var(--accent-blue)]' : 'hover:bg-gray-100 border-transparent'}`}
+              className={`group p-3 rounded-lg mb-2 cursor-pointer transition border relative ${selectedSessionId === session.id ? 'bg-[var(--accent-blue)] text-white border-[var(--accent-blue)]' : 'hover:bg-gray-100 border-transparent'}`}
               onClick={() => setSelectedSessionId(session.id)}
             >
-              <div className="font-semibold truncate">{session.name}</div>
+              <div className="font-semibold truncate pr-8">{session.name}</div>
               {session.summary && <div className="text-xs opacity-70 truncate">{session.summary}</div>}
+              <button
+                className={`absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${selectedSessionId === session.id ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:bg-red-100 hover:text-red-600'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteChat(session.id);
+                }}
+                title="Delete chat"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
             </div>
           ))}
         </div>
@@ -259,11 +298,26 @@ export default function Chat() {
                         : 'bg-white border border-gray-100'
                     }`}>
                       {message.role === 'assistant' ? (
-                        <ReactMarkdown components={{
-                          p: ({node, ...props}) => <p className="prose prose-sm max-w-none" {...props} />
-                        }}>{message.content}</ReactMarkdown>
+                        <ReactMarkdown 
+                          components={{
+                            p: ({node, ...props}) => <p className="mb-3 leading-relaxed" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1" {...props} />,
+                            li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-semibold text-[var(--text-primary)]" {...props} />,
+                            em: ({node, ...props}) => <em className="italic" {...props} />,
+                            h1: ({node, ...props}) => <h1 className="text-lg font-bold mb-2" {...props} />,
+                            h2: ({node, ...props}) => <h2 className="text-base font-bold mb-2" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-base font-semibold mb-1" {...props} />,
+                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[var(--accent-yellow)] pl-4 italic mb-3" {...props} />,
+                            code: ({node, ...props}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props} />,
+                            a: ({node, ...props}) => <a className="text-[var(--accent-blue)] hover:underline" {...props} />
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
                       ) : (
-                        <span>{message.content}</span>
+                        <span className="whitespace-pre-wrap">{message.content}</span>
                       )}
                       {/* Copy button */}
                       <button
@@ -296,15 +350,18 @@ export default function Chat() {
                   </div>
                 ))}
                 {sendMessageMutation.isPending && (
-                  <div className="flex gap-3 items-end">
-                    <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center animate-pulse">
-                      <span className="text-white font-black">∞</span>
+                  <div className="flex gap-3 items-end animate-fade-in">
+                    <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     </div>
-                    <div className="bg-white p-4 rounded-2xl shadow-md border border-gray-100">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="bg-white p-4 rounded-2xl shadow-md border border-gray-100 min-w-[120px]">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-[var(--accent-blue)] rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-[var(--accent-blue)] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-[var(--accent-blue)] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                        <span className="text-[var(--text-secondary)] text-sm font-medium animate-pulse">AI is thinking...</span>
                       </div>
                     </div>
                   </div>
