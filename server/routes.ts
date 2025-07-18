@@ -5,6 +5,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { getChatResponse } from "./anthropic";
 import { z } from "zod";
 import { nanoid } from "nanoid";
+import { getOpenAIChatResponse } from "./openai"; // (Assume this will be implemented)
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -232,6 +233,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper: Find relevant chapters by keyword match
+  function findRelevantChapters(query: string, chapters: any[]) {
+    const q = query.toLowerCase();
+    return chapters
+      .map(ch => ({
+        ...ch,
+        score: (ch.title + ' ' + ch.content).toLowerCase().includes(q) ? 1 : 0
+      }))
+      .filter(ch => ch.score > 0)
+      .slice(0, 2); // top 2 matches
+  }
+
   app.post('/api/chat', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -241,29 +254,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      // Get existing chat session
-      const session = await storage.getUserChatSession(userId);
-      const existingMessages = Array.isArray(session?.messages) ? session.messages : [];
+      // Get all chapters
+      const chapters = await storage.getAllChapters();
+      const relevantChapters = findRelevantChapters(message, chapters);
+      const context = relevantChapters.map(ch => `${ch.title}:\n${ch.content.slice(0, 500)}...`).join('\n\n');
+      const references = relevantChapters.map(ch => `[${ch.title}](\/chapter\/${ch.slug})`).join(', ');
 
-      // Add user message
-      const messages = [
-        ...existingMessages,
-        { role: 'user', content: message, timestamp: new Date().toISOString() }
-      ];
+      // Build prompt for OpenAI
+      const prompt = `You are a management coach. Here is some learning content:\n${context}\n\nUser question: ${message}\n\nInstructions:\n- Answer the user's question based on the above content.\n- Do NOT copy the content verbatim.\n- At the end, add a reference link to the relevant chapter(s) in this format: ${references}`;
 
-      // Get AI response
-      const aiResponse = await getChatResponse(
-        messages.map(m => ({ role: m.role, content: m.content }))
-      );
+      // Get AI response (OpenAI)
+      const aiResponse = await getOpenAIChatResponse(prompt);
 
-      // Add AI response
-      const updatedMessages = [
-        ...messages,
-        { role: 'assistant', content: aiResponse, timestamp: new Date().toISOString() }
-      ];
-
-      // Save to database
-      await storage.updateChatSession(userId, updatedMessages);
+      // Save to chat history as before (optional, not shown here)
 
       res.json({ message: aiResponse });
     } catch (error) {

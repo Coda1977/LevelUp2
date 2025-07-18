@@ -87,6 +87,8 @@ export const sharedChapters = pgTable("shared_chapters", {
 export const chatSessions = pgTable("chat_sessions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").references(() => users.id),
+  name: varchar("name").notNull(), // session title
+  summary: varchar("summary"), // optional short description
   messages: jsonb("messages").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
