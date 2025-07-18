@@ -53,8 +53,8 @@ export default function Chat() {
     enabled: isAuthenticated,
   });
 
-  // Placeholder: filter messages by selected session (replace with real API)
-  const sessionMessages = messages; // In real code, filter by session
+  // Filter messages by selected session - for new chats, show empty array
+  const sessionMessages = selectedSessionId === '1' ? messages : [];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
