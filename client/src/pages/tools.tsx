@@ -1,11 +1,13 @@
 import { useAuth } from "@/hooks/useAuth";
 import { MobileNav } from "@/components/MobileNav";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ToolModal } from "@/components/ToolModal";
 
 export default function Tools() {
   const { isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+  const [selectedTool, setSelectedTool] = useState<any>(null);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -115,8 +117,8 @@ export default function Tools() {
                 key={tool.id}
                 className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer group"
                 onClick={() => {
-                  // TODO: Implement tool functionality
                   console.log(`Opening tool: ${tool.title}`);
+                  setSelectedTool(tool);
                 }}
               >
                 <div className="text-4xl mb-4">{tool.icon}</div>
@@ -146,6 +148,14 @@ export default function Tools() {
       </section>
 
       <MobileNav />
+      
+      {selectedTool && (
+        <ToolModal
+          tool={selectedTool}
+          isOpen={!!selectedTool}
+          onClose={() => setSelectedTool(null)}
+        />
+      )}
     </div>
   );
 }
