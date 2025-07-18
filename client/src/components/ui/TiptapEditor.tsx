@@ -5,6 +5,18 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import Blockquote from "@tiptap/extension-blockquote";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
+import Heading from "@tiptap/extension-heading";
+import BulletList from "@tiptap/extension-bullet-list";
+import OrderedList from "@tiptap/extension-ordered-list";
+import ListItem from "@tiptap/extension-list-item";
+import { Table } from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
+import Image from "@tiptap/extension-image";
+import Highlight from "@tiptap/extension-highlight";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
 
 interface TiptapEditorProps {
   value: string;
@@ -20,6 +32,18 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, pla
       Link.configure({ openOnClick: false }),
       Blockquote,
       HorizontalRule,
+      Heading.configure({ levels: [1, 2, 3] }),
+      BulletList,
+      OrderedList,
+      ListItem,
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableCell,
+      TableHeader,
+      Image,
+      Highlight,
+      TaskList,
+      TaskItem,
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -45,6 +69,29 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, pla
   return (
     <div>
       <div className="flex flex-wrap gap-2 mb-2 border-b pb-2 bg-[var(--muted)] rounded-t-md px-2">
+        {/* Headings */}
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={`px-2 py-1 rounded transition-colors font-bold text-lg ${editor.isActive('heading', { level: 1 }) ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>H1</button>
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={`px-2 py-1 rounded transition-colors font-bold ${editor.isActive('heading', { level: 2 }) ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>H2</button>
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={`px-2 py-1 rounded transition-colors font-bold ${editor.isActive('heading', { level: 3 }) ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>H3</button>
+        {/* Lists */}
+        <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={`px-2 py-1 rounded transition-colors ${editor.isActive('bulletList') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>• List</button>
+        <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={`px-2 py-1 rounded transition-colors ${editor.isActive('orderedList') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>1. List</button>
+        {/* Task List */}
+        <button type="button" onClick={() => editor.chain().focus().toggleTaskList().run()} className={`px-2 py-1 rounded transition-colors ${editor.isActive('taskList') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>☑️</button>
+        {/* Table */}
+        <button type="button" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} className="px-2 py-1 rounded transition-colors hover:bg-[var(--accent-yellow)]/60">Table</button>
+        {/* Image */}
+        <button type="button" onClick={() => {
+          const url = window.prompt('Enter image URL or leave blank to upload');
+          if (url) {
+            editor.chain().focus().setImage({ src: url }).run();
+          } else {
+            // For upload, you could integrate a file picker and upload logic here
+            alert('Image upload not implemented. Paste a URL for now.');
+          }
+        }} className="px-2 py-1 rounded transition-colors hover:bg-[var(--accent-yellow)]/60">🖼️</button>
+        {/* Highlight */}
+        <button type="button" onClick={() => editor.chain().focus().toggleHighlight().run()} className={`px-2 py-1 rounded transition-colors ${editor.isActive('highlight') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>Highlight</button>
         <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={`px-2 py-1 rounded font-bold transition-colors ${editor.isActive('bold') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>B</button>
         <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={`px-2 py-1 rounded italic transition-colors ${editor.isActive('italic') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>I</button>
         <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={`px-2 py-1 rounded underline transition-colors ${editor.isActive('underline') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>U</button>

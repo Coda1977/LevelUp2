@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, BookOpen, FolderPlus } from "lucide-react";
 import { TiptapEditor } from "@/components/ui/TiptapEditor";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Add types for Category and Chapter
 interface Category {
@@ -28,7 +29,10 @@ interface Chapter {
   categoryId: number;
   chapterNumber: number;
   estimatedMinutes: number;
-  embedUrl?: string;
+  podcastUrl?: string;
+  podcastHeader?: string;
+  videoUrl?: string;
+  videoHeader?: string;
 }
 
 export default function Admin() {
@@ -64,7 +68,10 @@ export default function Admin() {
     categoryId: "",
     chapterNumber: 1,
     estimatedMinutes: 5,
-    embedUrl: "",
+    podcastUrl: "",
+    podcastHeader: "Podcast",
+    videoUrl: "",
+    videoHeader: "Video",
   });
 
   // Create category mutation
@@ -114,7 +121,10 @@ export default function Admin() {
         categoryId: "",
         chapterNumber: 1,
         estimatedMinutes: 5,
-        embedUrl: "",
+        podcastUrl: "",
+        podcastHeader: "Podcast",
+        videoUrl: "",
+        videoHeader: "Video",
       });
       setShowChapterForm(false);
     },
@@ -126,6 +136,68 @@ export default function Admin() {
       });
     },
   });
+
+  // Edit/delete state
+  const [editCategory, setEditCategory] = useState<Category | null>(null);
+  const [editChapter, setEditChapter] = useState<Chapter | null>(null);
+  const [deleteCategoryId, setDeleteCategoryId] = useState<number | null>(null);
+  const [deleteChapterId, setDeleteChapterId] = useState<number | null>(null);
+
+  // Mutations for delete
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/categories/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Category deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      setDeleteCategoryId(null);
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+  const deleteChapterMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/chapters/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Chapter deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/chapters"] });
+      setDeleteChapterId(null);
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Edit handlers
+  function handleEditCategory(category: Category) {
+    setEditCategory(category);
+    setShowCategoryForm(true);
+    setCategoryData({
+      title: category.title,
+      description: category.description,
+      sortOrder: category.sortOrder,
+    });
+  }
+  function handleEditChapter(chapter: Chapter) {
+    setEditChapter(chapter);
+    setShowChapterForm(true);
+    setChapterData({
+      title: chapter.title,
+      slug: chapter.slug,
+      description: chapter.description,
+      content: chapter.content,
+      categoryId: chapter.categoryId.toString(),
+      chapterNumber: chapter.chapterNumber,
+      estimatedMinutes: chapter.estimatedMinutes,
+      podcastUrl: chapter.podcastUrl || "",
+      podcastHeader: chapter.podcastHeader || "Podcast",
+      videoUrl: chapter.videoUrl || "",
+      videoHeader: chapter.videoHeader || "Video",
+    });
+  }
 
   const handleCreateCategory = (e: React.FormEvent) => {
     e.preventDefault();
@@ -288,11 +360,15 @@ export default function Admin() {
             ) : (
               categories.map((category: Category) => (
                 <Card key={category.id}>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-[var(--text-primary)]">{category.title}</h3>
-                    <p className="text-sm text-[var(--text-secondary)] mt-1">{category.description}</p>
-                    <div className="text-xs text-[var(--text-secondary)] mt-2">
-                      Order: {category.sortOrder}
+                  <CardContent className="p-4 flex justify-between items-center">
+                    <div>
+                      <h3 className="font-semibold text-[var(--text-primary)]">{category.title}</h3>
+                      <p className="text-sm text-[var(--text-secondary)] mt-1">{category.description}</p>
+                      <div className="text-xs text-[var(--text-secondary)] mt-2">Order: {category.sortOrder}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditCategory(category)}>Edit</Button>
+                      <Button size="sm" variant="destructive" onClick={() => setDeleteCategoryId(category.id)}>Delete</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -428,7 +504,18 @@ export default function Admin() {
                         <div className="prose prose-lg max-w-none">
                           <div dangerouslySetInnerHTML={{ __html: chapterData.content }} />
                         </div>
-                        {renderMediaEmbed(chapterData.embedUrl)}
+                        {chapterData.podcastUrl && (
+                          <div className="mt-8">
+                            <h3 className="text-xl font-bold mb-4">{chapterData.podcastHeader}</h3>
+                            {renderMediaEmbed(chapterData.podcastUrl)}
+                          </div>
+                        )}
+                        {chapterData.videoUrl && (
+                          <div className="mt-8">
+                            <h3 className="text-xl font-bold mb-4">{chapterData.videoHeader}</h3>
+                            {renderMediaEmbed(chapterData.videoUrl)}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <TiptapEditor
@@ -439,12 +526,39 @@ export default function Admin() {
                     )}
                   </div>
                   <div>
-                    <Label htmlFor="embedUrl">Media URL (optional)</Label>
+                    <Label htmlFor="podcastUrl">Podcast URL (Spotify, optional)</Label>
                     <Input
-                      id="embedUrl"
-                      value={chapterData.embedUrl}
-                      onChange={(e) => setChapterData({ ...chapterData, embedUrl: e.target.value })}
-                      placeholder="YouTube, Spotify, or other embed URL"
+                      id="podcastUrl"
+                      value={chapterData.podcastUrl}
+                      onChange={(e) => setChapterData({ ...chapterData, podcastUrl: e.target.value })}
+                      placeholder="Spotify episode or show URL"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="podcastHeader">Podcast Header</Label>
+                    <Input
+                      id="podcastHeader"
+                      value={chapterData.podcastHeader}
+                      onChange={(e) => setChapterData({ ...chapterData, podcastHeader: e.target.value })}
+                      placeholder="e.g., Listen & Learn"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="videoUrl">Video URL (YouTube or TED, optional)</Label>
+                    <Input
+                      id="videoUrl"
+                      value={chapterData.videoUrl}
+                      onChange={(e) => setChapterData({ ...chapterData, videoUrl: e.target.value })}
+                      placeholder="YouTube or TED talk URL"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="videoHeader">Video Header</Label>
+                    <Input
+                      id="videoHeader"
+                      value={chapterData.videoHeader}
+                      onChange={(e) => setChapterData({ ...chapterData, videoHeader: e.target.value })}
+                      placeholder="e.g., Watch This"
                     />
                   </div>
                   <div className="flex gap-3">
@@ -476,12 +590,18 @@ export default function Admin() {
             ) : (
               chapters.map((chapter: Chapter) => (
                 <Card key={chapter.id}>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-[var(--text-primary)]">{chapter.title}</h3>
-                    <p className="text-sm text-[var(--text-secondary)] mt-1">{chapter.description}</p>
-                    <div className="flex justify-between items-center mt-2 text-xs text-[var(--text-secondary)]">
-                      <span>Chapter {chapter.chapterNumber}</span>
-                      <span>{chapter.estimatedMinutes} min</span>
+                  <CardContent className="p-4 flex justify-between items-center">
+                    <div>
+                      <h3 className="font-semibold text-[var(--text-primary)]">{chapter.title}</h3>
+                      <p className="text-sm text-[var(--text-secondary)] mt-1">{chapter.description}</p>
+                      <div className="flex justify-between items-center mt-2 text-xs text-[var(--text-secondary)]">
+                        <span>Chapter {chapter.chapterNumber}</span>
+                        <span>{chapter.estimatedMinutes} min</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEditChapter(chapter)}>Edit</Button>
+                      <Button size="sm" variant="destructive" onClick={() => setDeleteChapterId(chapter.id)}>Delete</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -490,6 +610,36 @@ export default function Admin() {
           </div>
         </div>
       </div>
+      {/* Delete Category Dialog */}
+      <Dialog open={!!deleteCategoryId} onOpenChange={() => setDeleteCategoryId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-[var(--text-secondary)]">Are you sure you want to delete this category? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <Button onClick={() => deleteCategoryMutation.mutate(deleteCategoryId!)} className="bg-[var(--accent-yellow)] text-[var(--text-primary)]">Delete</Button>
+              <Button variant="ghost" onClick={() => setDeleteCategoryId(null)}>Cancel</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Delete Chapter Dialog */}
+      <Dialog open={!!deleteChapterId} onOpenChange={() => setDeleteChapterId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Chapter</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-[var(--text-secondary)]">Are you sure you want to delete this chapter? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <Button onClick={() => deleteChapterMutation.mutate(deleteChapterId!)} className="bg-[var(--accent-yellow)] text-[var(--text-primary)]">Delete</Button>
+              <Button variant="ghost" onClick={() => setDeleteChapterId(null)}>Cancel</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
