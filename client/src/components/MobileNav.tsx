@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, BookOpen, MessageSquare, Wrench } from "lucide-react";
+import { Home, BookOpen, MessageSquare } from "lucide-react";
 
 export function MobileNav() {
   const [location] = useLocation();
@@ -7,12 +7,11 @@ export function MobileNav() {
   const navItems = [
     { path: '/dashboard', label: 'Home', icon: Home },
     { path: '/learn', label: 'Learn', icon: BookOpen },
-    { path: '/tools', label: 'Tools', icon: Wrench },
     { path: '/chat', label: 'Chat', icon: MessageSquare },
   ];
 
   const isActive = (path: string) => {
-    if (path === '/dashboard' && location === '/') return true;
+    if (path === '/dashboard' && (location === '/' || location === '/dashboard')) return true;
     if (path !== '/dashboard' && location.startsWith(path)) return true;
     return false;
   };

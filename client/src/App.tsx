@@ -9,7 +9,6 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Learn from "@/pages/learn";
 import Chat from "@/pages/chat";
-import Tools from "@/pages/tools";
 import Chapter from "@/pages/chapter";
 import Analytics from "@/pages/analytics";
 import Team from "@/pages/team";
@@ -41,7 +40,6 @@ function Router() {
         <Route path="/dashboard" component={isAuthenticated ? Dashboard : Landing} />
         <Route path="/learn" component={isAuthenticated ? Learn : Landing} />
         <Route path="/chat" component={isAuthenticated ? Chat : Landing} />
-        <Route path="/tools" component={isAuthenticated ? Tools : Landing} />
         <Route path="/analytics" component={isAuthenticated ? Analytics : Landing} />
         <Route path="/team" component={isAuthenticated ? Team : Landing} />
         <Route path="/admin" component={isAuthenticated ? Admin : Landing} />

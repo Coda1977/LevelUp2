@@ -11,15 +11,14 @@ export function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
-    if (path === '/' && location === '/') return true;
-    if (path !== '/' && location.startsWith(path)) return true;
+    if (path === '/dashboard' && (location === '/' || location === '/dashboard')) return true;
+    if (path !== '/dashboard' && location.startsWith(path)) return true;
     return false;
   };
 
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/learn', label: 'Learn' },
-    { path: '/tools', label: 'Tools' },
     { path: '/chat', label: 'AI Coach', className: 'ai-coach' },
     { path: '/analytics', label: 'Analytics' },
     { path: '/team', label: 'Team' },
