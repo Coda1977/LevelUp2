@@ -9,19 +9,42 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, BookOpen, FolderPlus } from "lucide-react";
+import { TiptapEditor } from "@/components/ui/TiptapEditor";
+
+// Add types for Category and Chapter
+interface Category {
+  id: number;
+  title: string;
+  description: string;
+  sortOrder: number;
+}
+
+interface Chapter {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  content: string;
+  categoryId: number;
+  chapterNumber: number;
+  estimatedMinutes: number;
+  embedUrl?: string;
+}
 
 export default function Admin() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showChapterForm, setShowChapterForm] = useState(false);
+  // Add preview mode state
+  const [previewMode, setPreviewMode] = useState(false);
 
   // Fetch categories and chapters
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
-  const { data: chapters = [] } = useQuery({
+  const { data: chapters = [] } = useQuery<Chapter[]>({
     queryKey: ["/api/chapters"],
   });
 
@@ -122,6 +145,55 @@ export default function Admin() {
       .replace(/(^-|-$)/g, "");
   };
 
+  // Helper to render media embed
+  function renderMediaEmbed(url: string) {
+    if (!url) return null;
+    // Spotify
+    if (url.includes("spotify.com/episode/") || url.includes("spotify.com/show/")) {
+      return (
+        <iframe
+          src={url.replace("/show/", "/embed/show/").replace("/episode/", "/embed/episode/")}
+          width="100%"
+          height="152"
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          className="rounded-lg my-4"
+        ></iframe>
+      );
+    }
+    // YouTube
+    const ytMatch = url.match(/(?:youtu.be\/|youtube.com\/(?:watch\?v=|embed\/|v\/))([\w-]{11})/);
+    if (ytMatch) {
+      return (
+        <iframe
+          src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+          width="100%"
+          height="315"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="rounded-lg my-4"
+        ></iframe>
+      );
+    }
+    // TED
+    const tedMatch = url.match(/ted.com\/talks\/([\w-]+)/);
+    if (tedMatch) {
+      return (
+        <iframe
+          src={`https://embed.ted.com/talks/${tedMatch[1]}`}
+          width="100%"
+          height="315"
+          frameBorder="0"
+          allowFullScreen
+          className="rounded-lg my-4"
+        ></iframe>
+      );
+    }
+    return null;
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-5 py-8">
       <div className="mb-8">
@@ -214,7 +286,7 @@ export default function Admin() {
                 No categories yet. Create your first category to get started.
               </p>
             ) : (
-              categories.map((category: any) => (
+              categories.map((category: Category) => (
                 <Card key={category.id}>
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-[var(--text-primary)]">{category.title}</h3>
@@ -301,7 +373,7 @@ export default function Admin() {
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((category: any) => (
+                        {categories.map((category: Category) => (
                           <SelectItem key={category.id} value={category.id.toString()}>
                             {category.title}
                           </SelectItem>
@@ -343,14 +415,28 @@ export default function Admin() {
                   </div>
                   <div>
                     <Label htmlFor="chapterContent">Content</Label>
-                    <Textarea
-                      id="chapterContent"
-                      value={chapterData.content}
-                      onChange={(e) => setChapterData({ ...chapterData, content: e.target.value })}
-                      placeholder="Main content of the chapter (supports Markdown)"
-                      rows={8}
-                      required
-                    />
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm text-[var(--text-secondary)]">Edit Mode</span>
+                      <label className="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={previewMode} onChange={e => setPreviewMode(e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[var(--accent-yellow)] rounded-full peer peer-checked:bg-[var(--accent-yellow)] transition-all"></div>
+                        <span className="ml-2 text-sm text-[var(--text-secondary)]">Preview</span>
+                      </label>
+                    </div>
+                    {previewMode ? (
+                      <div className="bg-white rounded-2xl p-8 shadow-lg mb-8 mt-2">
+                        <div className="prose prose-lg max-w-none">
+                          <div dangerouslySetInnerHTML={{ __html: chapterData.content }} />
+                        </div>
+                        {renderMediaEmbed(chapterData.embedUrl)}
+                      </div>
+                    ) : (
+                      <TiptapEditor
+                        value={chapterData.content}
+                        onChange={(html) => setChapterData({ ...chapterData, content: html })}
+                        placeholder="Main content of the chapter (rich formatting supported)"
+                      />
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="embedUrl">Media URL (optional)</Label>
@@ -388,7 +474,7 @@ export default function Admin() {
                 No chapters yet. Create your first chapter to get started.
               </p>
             ) : (
-              chapters.map((chapter: any) => (
+              chapters.map((chapter: Chapter) => (
                 <Card key={chapter.id}>
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-[var(--text-primary)]">{chapter.title}</h3>
