@@ -44,6 +44,7 @@ Preferred communication style: Simple, everyday language.
 - **Categories**: Foundations, Growing the Team, Meeting People
 - **Content Types**: 5-minute articles with embedded media (Spotify podcasts, YouTube videos)
 - **Progress Tracking**: User completion status with persistent storage
+- **Rich Text Editor**: TipTap is the single editor used for all content creation (category descriptions, chapter descriptions, and chapter content)
 
 ### AI Mentor Integration
 - **Provider**: Anthropic Claude (claude-sonnet-4-20250514)
@@ -103,6 +104,7 @@ Preferred communication style: Simple, everyday language.
 - **Styling**: Tailwind CSS with PostCSS processing
 - **Icons**: Lucide React for consistent iconography
 - **Forms**: React Hook Form with Zod validation
+- **Rich Text Editing**: TipTap editor with StarterKit, Underline, Table, Image, Highlight, TaskList, and TaskItem extensions
 
 ## Deployment Strategy
 

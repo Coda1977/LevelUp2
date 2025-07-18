@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -313,12 +313,10 @@ export default function Admin() {
                   </div>
                   <div>
                     <Label htmlFor="categoryDescription">Description</Label>
-                    <Textarea
-                      id="categoryDescription"
+                    <TiptapEditor
                       value={categoryData.description}
-                      onChange={(e) => setCategoryData({ ...categoryData, description: e.target.value })}
+                      onChange={(html) => setCategoryData({ ...categoryData, description: html })}
                       placeholder="Brief description of what this category covers"
-                      rows={3}
                     />
                   </div>
                   <div>
@@ -481,12 +479,10 @@ export default function Admin() {
                   </div>
                   <div>
                     <Label htmlFor="chapterDescription">Description</Label>
-                    <Textarea
-                      id="chapterDescription"
+                    <TiptapEditor
                       value={chapterData.description}
-                      onChange={(e) => setChapterData({ ...chapterData, description: e.target.value })}
+                      onChange={(html) => setChapterData({ ...chapterData, description: html })}
                       placeholder="Brief description of the chapter content"
-                      rows={2}
                     />
                   </div>
                   <div>
@@ -593,7 +589,7 @@ export default function Admin() {
                   <CardContent className="p-4 flex justify-between items-center">
                     <div>
                       <h3 className="font-semibold text-[var(--text-primary)]">{chapter.title}</h3>
-                      <p className="text-sm text-[var(--text-secondary)] mt-1">{chapter.description}</p>
+                      <div className="text-sm text-[var(--text-secondary)] mt-1 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: chapter.description }} />
                       <div className="flex justify-between items-center mt-2 text-xs text-[var(--text-secondary)]">
                         <span>Chapter {chapter.chapterNumber}</span>
                         <span>{chapter.estimatedMinutes} min</span>

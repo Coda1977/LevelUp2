@@ -105,9 +105,7 @@ export default function Learn() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold mb-2">{category.title}</h2>
-                    <p className="text-[var(--text-secondary)] text-lg">
-                      {category.description}
-                    </p>
+                    <div className="text-[var(--text-secondary)] text-lg prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: category.description }} />
                   </div>
                 </div>
                 
