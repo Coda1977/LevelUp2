@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { Table, TableRow, TableCell, TableHeader } from "@tiptap/extension-table";
 import { Image } from "@tiptap/extension-image";
@@ -18,18 +17,8 @@ interface TiptapEditorProps {
 export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, placeholder }) => {
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        // Disable default extensions that we want to configure separately
-        blockquote: false,
-        horizontalRule: false,
-        heading: false,
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
-        link: false, // We're using Link extension separately
-      }),
+      StarterKit,
       Underline,
-      Link.configure({ openOnClick: false }),
       Table.configure({ resizable: true }),
       TableRow,
       TableCell,
@@ -92,11 +81,6 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, pla
         <button type="button" onClick={() => editor.chain().focus().toggleStrike().run()} className={`px-2 py-1 rounded line-through transition-colors ${editor.isActive('strike') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>S</button>
         <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={`px-2 py-1 rounded transition-colors ${editor.isActive('blockquote') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>&#8220; &#8221;</button>
         <button type="button" onClick={() => editor.chain().focus().setHorizontalRule().run()} className="px-2 py-1 rounded transition-colors hover:bg-[var(--accent-yellow)]/60">―</button>
-        <button type="button" onClick={() => {
-          const url = window.prompt('Enter a URL');
-          if (url) editor.chain().focus().setLink({ href: url }).run();
-        }} className={`px-2 py-1 rounded transition-colors ${editor.isActive('link') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>🔗</button>
-        <button type="button" onClick={() => editor.chain().focus().unsetLink().run()} className="px-2 py-1 rounded transition-colors hover:bg-[var(--accent-yellow)]/60">❌🔗</button>
       </div>
       <div className="prose prose-lg max-w-none bg-white border border-[var(--border)] rounded-b-md p-4 min-h-[160px] focus-within:ring-2 focus-within:ring-[var(--accent-yellow)] transition-shadow">
         <EditorContent editor={editor} />
