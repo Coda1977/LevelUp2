@@ -2,10 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { getChatResponse } from "./anthropic";
+import { getChatResponse, getOpenAIChatResponse } from "./openai";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { getOpenAIChatResponse } from "./openai"; // (Assume this will be implemented)
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
