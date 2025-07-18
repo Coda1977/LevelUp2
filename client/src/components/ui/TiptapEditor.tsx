@@ -17,7 +17,10 @@ interface TiptapEditorProps {
 export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, placeholder }) => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable underline in StarterKit to avoid conflicts
+        // as we're adding it separately
+      }),
       Underline,
       Table.configure({ resizable: true }),
       TableRow,

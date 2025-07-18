@@ -137,6 +137,46 @@ export default function Admin() {
     },
   });
 
+  // Update chapter mutation
+  const updateChapterMutation = useMutation({
+    mutationFn: async (data: typeof chapterData & { id: number }) => {
+      const response = await apiRequest("PUT", `/api/chapters/${data.id}`, {
+        ...data,
+        categoryId: parseInt(data.categoryId),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Chapter updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/chapters"] });
+      setChapterData({
+        title: "",
+        slug: "",
+        description: "",
+        content: "",
+        categoryId: "",
+        chapterNumber: 1,
+        estimatedMinutes: 5,
+        podcastUrl: "",
+        podcastHeader: "Podcast",
+        videoUrl: "",
+        videoHeader: "Video",
+      });
+      setEditChapter(null);
+      setShowChapterForm(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Edit/delete state
   const [editCategory, setEditCategory] = useState<Category | null>(null);
   const [editChapter, setEditChapter] = useState<Chapter | null>(null);
@@ -206,7 +246,13 @@ export default function Admin() {
 
   const handleCreateChapter = (e: React.FormEvent) => {
     e.preventDefault();
-    createChapterMutation.mutate(chapterData);
+    if (editChapter) {
+      // Update existing chapter
+      updateChapterMutation.mutate({ ...chapterData, id: editChapter.id });
+    } else {
+      // Create new chapter
+      createChapterMutation.mutate(chapterData);
+    }
   };
 
   // Auto-generate slug from title
@@ -403,9 +449,9 @@ export default function Admin() {
           {showChapterForm && categories.length > 0 && (
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Create New Chapter</CardTitle>
+                <CardTitle>{editChapter ? 'Edit Chapter' : 'Create New Chapter'}</CardTitle>
                 <CardDescription>
-                  Add a new learning chapter with content and media
+                  {editChapter ? 'Update the chapter details and content' : 'Add a new learning chapter with content and media'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -560,15 +606,34 @@ export default function Admin() {
                   <div className="flex gap-3">
                     <Button 
                       type="submit" 
-                      disabled={createChapterMutation.isPending}
+                      disabled={createChapterMutation.isPending || updateChapterMutation.isPending}
                       className="bg-[var(--text-primary)] text-[var(--bg-primary)]"
                     >
-                      {createChapterMutation.isPending ? "Creating..." : "Create Chapter"}
+                      {editChapter 
+                        ? (updateChapterMutation.isPending ? "Updating..." : "Update Chapter")
+                        : (createChapterMutation.isPending ? "Creating..." : "Create Chapter")
+                      }
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setShowChapterForm(false)}
+                      onClick={() => {
+                        setShowChapterForm(false);
+                        setEditChapter(null);
+                        setChapterData({
+                          title: "",
+                          slug: "",
+                          description: "",
+                          content: "",
+                          categoryId: "",
+                          chapterNumber: 1,
+                          estimatedMinutes: 5,
+                          podcastUrl: "",
+                          podcastHeader: "Podcast",
+                          videoUrl: "",
+                          videoHeader: "Video",
+                        });
+                      }}
                     >
                       Cancel
                     </Button>

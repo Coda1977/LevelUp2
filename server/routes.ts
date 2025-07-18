@@ -100,6 +100,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/chapters/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { title, slug, description, content, categoryId, chapterNumber, estimatedMinutes, podcastUrl, podcastHeader, videoUrl, videoHeader } = req.body;
+      
+      const chapter = await storage.updateChapter(id, {
+        title,
+        slug,
+        description,
+        content,
+        categoryId,
+        chapterNumber,
+        estimatedMinutes,
+        podcastUrl: podcastUrl || null,
+        podcastHeader: podcastHeader || "Podcast",
+        videoUrl: videoUrl || null,
+        videoHeader: videoHeader || "Video",
+      });
+      res.json(chapter);
+    } catch (error) {
+      console.error("Error updating chapter:", error);
+      res.status(500).json({ message: "Failed to update chapter" });
+    }
+  });
+
+  app.delete('/api/chapters/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteChapter(id);
+      res.json({ message: "Chapter deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting chapter:", error);
+      res.status(500).json({ message: "Failed to delete chapter" });
+    }
+  });
+
   // Progress routes
   app.get('/api/progress', isAuthenticated, async (req: any, res) => {
     try {

@@ -35,6 +35,8 @@ export interface IStorage {
   getChapterBySlug(slug: string): Promise<Chapter | undefined>;
   getAllChapters(): Promise<Chapter[]>;
   createChapter(chapter: InsertChapter): Promise<Chapter>;
+  updateChapter(id: number, chapter: Partial<InsertChapter>): Promise<Chapter>;
+  deleteChapter(id: number): Promise<void>;
   
   // Progress operations
   getUserProgress(userId: string): Promise<UserProgress[]>;
@@ -122,6 +124,22 @@ export class DatabaseStorage implements IStorage {
       .values(chapter)
       .returning();
     return newChapter;
+  }
+
+  async updateChapter(id: number, chapterData: Partial<InsertChapter>): Promise<Chapter> {
+    const [updatedChapter] = await db
+      .update(chapters)
+      .set({
+        ...chapterData,
+        updatedAt: new Date(),
+      })
+      .where(eq(chapters.id, id))
+      .returning();
+    return updatedChapter;
+  }
+
+  async deleteChapter(id: number): Promise<void> {
+    await db.delete(chapters).where(eq(chapters.id, id));
   }
 
   async getUserProgress(userId: string): Promise<UserProgress[]> {
