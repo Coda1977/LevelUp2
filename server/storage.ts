@@ -19,7 +19,7 @@ import {
   type InsertChatSession,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations - required for Replit Auth
@@ -237,82 +237,54 @@ export class DatabaseStorage implements IStorage {
 
   // Analytics operations
   async getAnalytics(): Promise<any> {
+    // Calculate real analytics from database
+    const totalUsers = await db.select({ count: sql`count(*)` }).from(users);
+    const totalChapters = await db.select({ count: sql`count(*)` }).from(chapters);
+    const completedProgress = await db.select({ count: sql`count(*)` }).from(userProgress).where(eq(userProgress.completed, true));
+    
     return {
-      overallProgress: 68,
-      totalUsers: 142,
-      activeChats: 89,
-      completedChapters: 324,
-      averageEngagement: 74,
-      weeklyActivity: [
-        { day: 'Monday', users: 45, engagement: 72 },
-        { day: 'Tuesday', users: 52, engagement: 68 },
-        { day: 'Wednesday', users: 48, engagement: 75 },
-        { day: 'Thursday', users: 38, engagement: 65 },
-        { day: 'Friday', users: 42, engagement: 70 },
-        { day: 'Saturday', users: 25, engagement: 58 },
-        { day: 'Sunday', users: 28, engagement: 62 }
-      ],
-      categoryProgress: [
-        { category: 'Foundations', progress: 78, users: 89 },
-        { category: 'Growing the Team', progress: 65, users: 72 },
-        { category: 'Meeting People', progress: 52, users: 58 }
-      ],
-      topChapters: [
-        { title: 'Building Trust', completions: 127, rating: 4.8 },
-        { title: 'Effective Communication', completions: 98, rating: 4.6 },
-        { title: 'Delegation Strategies', completions: 85, rating: 4.7 }
-      ]
+      overallProgress: 0,
+      totalUsers: totalUsers[0]?.count || 0,
+      activeChats: 0,
+      completedChapters: completedProgress[0]?.count || 0,
+      averageEngagement: 0,
+      weeklyActivity: [],
+      categoryProgress: [],
+      topChapters: []
     };
   }
 
   // Team management operations
   async getTeamMembers(): Promise<any[]> {
-    return [
-      {
-        id: '1',
-        email: 'john.doe@company.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'admin',
-        joinedAt: '2024-01-15T10:00:00Z',
-        lastActive: '2024-01-18T14:30:00Z',
-        progress: {
-          completedChapters: 12,
-          totalChapters: 15,
-          percentage: 80
-        },
-        engagement: {
-          chatMessages: 45,
-          weeklyActivity: 85
-        }
+    // Return actual team members from database
+    const members = await db.select().from(users);
+    return members.map(user => ({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: 'member',
+      joinedAt: user.createdAt,
+      lastActive: user.updatedAt,
+      progress: {
+        completedChapters: 0,
+        totalChapters: 0,
+        percentage: 0
       },
-      {
-        id: '2',
-        email: 'jane.smith@company.com',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        role: 'member',
-        joinedAt: '2024-01-10T09:00:00Z',
-        lastActive: '2024-01-18T11:15:00Z',
-        progress: {
-          completedChapters: 8,
-          totalChapters: 15,
-          percentage: 53
-        },
-        engagement: {
-          chatMessages: 23,
-          weeklyActivity: 72
-        }
+      engagement: {
+        chatMessages: 0,
+        weeklyActivity: 0
       }
-    ];
+    }));
   }
 
   async getTeamStats(): Promise<any> {
+    const totalUsers = await db.select({ count: sql`count(*)` }).from(users);
     return {
-      totalMembers: 24,
-      activeMembers: 18,
-      averageProgress: 67,
-      totalChaptersCompleted: 298
+      totalMembers: totalUsers[0]?.count || 0,
+      activeMembers: totalUsers[0]?.count || 0,
+      averageProgress: 0,
+      totalChaptersCompleted: 0
     };
   }
 

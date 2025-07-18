@@ -22,7 +22,8 @@ export function Navigation() {
     { path: '/tools', label: 'Tools' },
     { path: '/chat', label: 'AI Coach', className: 'ai-coach' },
     { path: '/analytics', label: 'Analytics' },
-    { path: '/team', label: 'Team' }
+    { path: '/team', label: 'Team' },
+    { path: '/admin', label: 'Admin' }
   ];
 
   const handleSignOut = () => {

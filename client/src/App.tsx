@@ -13,12 +13,11 @@ import Tools from "@/pages/tools";
 import Chapter from "@/pages/chapter";
 import Analytics from "@/pages/analytics";
 import Team from "@/pages/team";
+import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  // Temporarily disable authentication to show landing page
-  const isAuthenticated = false;
-  const isLoading = false;
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -51,6 +50,7 @@ function Router() {
             <Route path="/tools" component={Tools} />
             <Route path="/analytics" component={Analytics} />
             <Route path="/team" component={Team} />
+            <Route path="/admin" component={Admin} />
             <Route path="/chapter/:slug" component={Chapter} />
             <Route component={NotFound} />
           </>

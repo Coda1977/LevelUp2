@@ -33,6 +33,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/categories', isAuthenticated, async (req, res) => {
+    try {
+      const { title, description, sortOrder } = req.body;
+      // Generate slug from title
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      
+      const category = await storage.createCategory({
+        slug,
+        title,
+        description,
+        sortOrder: sortOrder || 1,
+      });
+      res.json(category);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
   // Chapters routes
   app.get('/api/chapters', async (req, res) => {
     try {
@@ -54,6 +73,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching chapter:", error);
       res.status(500).json({ message: "Failed to fetch chapter" });
+    }
+  });
+
+  app.post('/api/chapters', isAuthenticated, async (req, res) => {
+    try {
+      const { title, slug, preview, content, categoryId, chapterNumber, duration, youtubeUrl, spotifyUrl } = req.body;
+      // Generate slug from title if not provided
+      const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      
+      const chapter = await storage.createChapter({
+        title,
+        slug: finalSlug,
+        preview,
+        content,
+        categoryId,
+        chapterNumber: chapterNumber || 1,
+        duration: duration || "5 min",
+        youtubeUrl: youtubeUrl || null,
+        spotifyUrl: spotifyUrl || null,
+      });
+      res.json(chapter);
+    } catch (error) {
+      console.error("Error creating chapter:", error);
+      res.status(500).json({ message: "Failed to create chapter" });
     }
   });
 
