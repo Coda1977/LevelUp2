@@ -19,6 +19,9 @@ import NotFound from "@/pages/not-found";
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // Debug logging
+  console.log('Router render - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
