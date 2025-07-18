@@ -221,10 +221,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Chat routes
-  app.get('/api/chat/history', isAuthenticated, async (req: any, res) => {
+  app.get('/api/chat/history/:sessionId', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const session = await storage.getUserChatSession(userId);
+      const sessionId = req.params.sessionId;
+      const session = await storage.getUserChatSession(`${userId}_${sessionId}`);
       res.json(session?.messages || []);
     } catch (error) {
       console.error("Error fetching chat history:", error);
@@ -247,10 +248,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/chat', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { message } = req.body;
+      const { message, sessionId } = req.body;
 
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ message: "Message is required" });
+      }
+
+      if (!sessionId || typeof sessionId !== 'string') {
+        return res.status(400).json({ message: "Session ID is required" });
       }
 
       // Get all chapters
@@ -263,7 +268,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const prompt = `You are a management coach. Here is some learning content:\n${context}\n\nUser question: ${message}\n\nInstructions:\n- Answer the user's question based on the above content.\n- Do NOT copy the content verbatim.\n- At the end, add a reference link to the relevant chapter(s) in this format: ${references}`;
 
       // Get existing chat session
-      const session = await storage.getUserChatSession(userId);
+      const userSessionId = `${userId}_${sessionId}`;
+      const session = await storage.getUserChatSession(userSessionId);
       const existingMessages = Array.isArray(session?.messages) ? session.messages : [];
 
       // Add user message
@@ -282,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       // Save to database
-      await storage.updateChatSession(userId, updatedMessages);
+      await storage.updateChatSession(userSessionId, updatedMessages);
 
       res.json({ message: aiResponse });
     } catch (error) {

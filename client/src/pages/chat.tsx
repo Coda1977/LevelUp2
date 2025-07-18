@@ -49,12 +49,13 @@ export default function Chat() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: messages = [] } = useQuery<Message[]>({
-    queryKey: ["/api/chat/history"],
-    enabled: isAuthenticated,
+    queryKey: ["/api/chat/history", selectedSessionId],
+    queryFn: () => fetch(`/api/chat/history/${selectedSessionId}`).then(res => res.json()),
+    enabled: isAuthenticated && !!selectedSessionId,
   });
 
-  // Filter messages by selected session - for new chats, show empty array
-  const sessionMessages = selectedSessionId === '1' ? messages : [];
+  // Use messages directly since they're already filtered by session
+  const sessionMessages = messages;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,11 +67,11 @@ export default function Chat() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest("POST", "/api/chat", { message });
+      const response = await apiRequest("POST", "/api/chat", { message, sessionId: selectedSessionId });
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/history", selectedSessionId] });
       setInputMessage('');
       
       // Auto-generate chat name from first message if current chat has default name
