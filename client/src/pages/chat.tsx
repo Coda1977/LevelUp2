@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MobileNav } from "@/components/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Copy } from "lucide-react";
+import { Send, Copy, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
@@ -31,8 +31,7 @@ export default function Chat() {
   const queryClient = useQueryClient();
   const [sessions, setSessions] = useState(mockSessions); // Replace with API call
   const [selectedSessionId, setSelectedSessionId] = useState(mockSessions[0].id);
-  const [showNewChatModal, setShowNewChatModal] = useState(false);
-  const [newChatName, setNewChatName] = useState('');
+  const [chatNameCounter, setChatNameCounter] = useState(4);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -70,9 +69,15 @@ export default function Chat() {
       const response = await apiRequest("POST", "/api/chat", { message });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
       setInputMessage('');
+      
+      // Auto-generate chat name from first message if current chat has default name
+      const currentSession = sessions.find(s => s.id === selectedSessionId);
+      if (currentSession && currentSession.name.startsWith('New Chat ')) {
+        generateChatName(inputMessage, currentSession.id);
+      }
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -121,12 +126,11 @@ export default function Chat() {
 
   // New chat handler
   const handleNewChat = () => {
-    if (!newChatName.trim()) return;
-    const newId = (sessions.length + 1).toString();
+    const newId = chatNameCounter.toString();
+    const newChatName = `New Chat ${chatNameCounter}`;
     setSessions([{ id: newId, name: newChatName, summary: '' }, ...sessions]);
     setSelectedSessionId(newId);
-    setShowNewChatModal(false);
-    setNewChatName('');
+    setChatNameCounter(prev => prev + 1);
     // In real code, also create session in backend
   };
 
@@ -155,6 +159,42 @@ export default function Chat() {
     });
     
     // In real code, also delete from backend
+  };
+
+  // Generate chat name from AI based on user's first message
+  const generateChatName = async (firstMessage: string, chatId: string) => {
+    try {
+      // Simple client-side name generation based on keywords
+      const keywords = firstMessage.toLowerCase();
+      let generatedName = 'General Discussion';
+      
+      if (keywords.includes('delegate') || keywords.includes('delegation')) {
+        generatedName = 'Delegation Discussion';
+      } else if (keywords.includes('feedback') || keywords.includes('review')) {
+        generatedName = 'Feedback Conversation';
+      } else if (keywords.includes('meeting') || keywords.includes('meetings')) {
+        generatedName = 'Meeting Improvement';
+      } else if (keywords.includes('team') || keywords.includes('motivation')) {
+        generatedName = 'Team Management';
+      } else if (keywords.includes('leadership') || keywords.includes('leader')) {
+        generatedName = 'Leadership Tips';
+      } else if (keywords.includes('communication') || keywords.includes('communicate')) {
+        generatedName = 'Communication Skills';
+      } else {
+        // Take first few words as fallback
+        const words = firstMessage.trim().split(' ').slice(0, 3);
+        generatedName = words.join(' ').slice(0, 20) + (firstMessage.length > 20 ? '...' : '');
+      }
+      
+      // Update the session name
+      setSessions(prev => prev.map(session => 
+        session.id === chatId 
+          ? { ...session, name: generatedName }
+          : session
+      ));
+    } catch (error) {
+      console.error('Failed to generate chat name:', error);
+    }
   };
 
   const starterPrompts = [
@@ -199,7 +239,7 @@ export default function Chat() {
         </div>
         <button
           className="w-full py-2 bg-[var(--accent-yellow)] text-[var(--text-primary)] rounded-lg font-semibold hover:bg-[var(--accent-blue)] hover:text-white transition"
-          onClick={() => setShowNewChatModal(true)}
+          onClick={handleNewChat}
         >
           + New Chat
         </button>
@@ -220,9 +260,7 @@ export default function Chat() {
                 }}
                 title="Delete chat"
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           ))}
@@ -393,27 +431,7 @@ export default function Chat() {
           </div>
         </div>
       </div>
-      {/* New Chat Modal (simple version) */}
-      {showNewChatModal && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm flex flex-col gap-4">
-            <h2 className="text-xl font-bold mb-2">Start a New Chat</h2>
-            <input
-              type="text"
-              className="border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[var(--accent-yellow)]"
-              placeholder="Name this chat (e.g. Delegation Dilemma)"
-              value={newChatName}
-              onChange={e => setNewChatName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleNewChat(); }}
-              autoFocus
-            />
-            <div className="flex gap-2 mt-2">
-              <Button onClick={handleNewChat} className="bg-[var(--accent-yellow)] text-[var(--text-primary)]">Create</Button>
-              <Button variant="ghost" onClick={() => setShowNewChatModal(false)}>Cancel</Button>
-            </div>
-          </div>
-        </div>
-      )}
+
       <MobileNav />
     </div>
   );
