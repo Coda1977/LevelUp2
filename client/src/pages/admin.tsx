@@ -313,17 +313,17 @@ export default function Admin() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-5 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-black text-[var(--text-primary)] mb-4">
+    <div className="max-w-6xl mx-auto px-3 md:px-5 py-6 md:py-8">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-4">
           Content Management
         </h1>
-        <p className="text-[var(--text-secondary)] text-lg">
+        <p className="text-[var(--text-secondary)] text-base md:text-lg">
           Add and manage learning content for Level Up
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
         {/* Categories Section */}
         <div>
           <div className="flex items-center justify-between mb-6">

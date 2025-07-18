@@ -156,14 +156,14 @@ export default function Chapter() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
-      <div className="max-w-4xl mx-auto px-5 py-12">
+      <div className="max-w-4xl mx-auto px-3 md:px-5 py-8 md:py-12">
         {/* Chapter Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="mb-8 md:mb-12">
+          <div className="flex flex-col md:flex-row items-start gap-3 mb-4">
             <Button
               variant="ghost"
               onClick={() => setLocation("/learn")}
-              className="text-[var(--accent-blue)] hover:text-[var(--accent-yellow)] transition-colors p-0 h-auto"
+              className="text-[var(--accent-blue)] hover:text-[var(--accent-yellow)] transition-colors p-0 h-auto min-w-[44px] min-h-[44px]"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back to Learn
@@ -171,8 +171,8 @@ export default function Chapter() {
             <span className="text-[var(--text-secondary)]">•</span>
             <span className="text-[var(--text-secondary)]">{category?.title}</span>
           </div>
-          <h1 className="hero-headline mb-4">{chapter.title}</h1>
-          <div className="flex items-center gap-4 text-[var(--text-secondary)]">
+          <h1 className="hero-headline mb-4 text-2xl md:text-4xl">{chapter.title}</h1>
+          <div className="flex flex-col md:flex-row items-start gap-4 text-[var(--text-secondary)]">
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
               {chapter.duration}
@@ -187,7 +187,7 @@ export default function Chapter() {
         </div>
 
         {/* Chapter Content */}
-        <div className="bg-white rounded-2xl p-8 md:p-12 shadow-lg mb-8">
+        <div className="bg-white rounded-2xl p-4 md:p-8 shadow-lg mb-6 md:mb-8">
           <div className="prose prose-lg max-w-none">
             {chapter.content ? (
               <div dangerouslySetInnerHTML={{ __html: chapter.content }} />
@@ -220,9 +220,9 @@ export default function Chapter() {
 
         {/* Media Section */}
         {(chapter.youtubeUrl || chapter.spotifyUrl) && (
-          <div className="bg-white rounded-2xl p-8 shadow-lg mb-8">
-            <h3 className="text-xl font-bold mb-6">Listen & Watch</h3>
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl p-4 md:p-8 shadow-lg mb-6 md:mb-8">
+            <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6">Listen & Watch</h3>
+            <div className="grid md:grid-cols-2 gap-4 md:gap-6 overflow-x-auto">
               {chapter.spotifyUrl && (
                 <div>
                   <h4 className="font-semibold mb-3">🎧 Podcast</h4>

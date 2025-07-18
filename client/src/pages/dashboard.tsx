@@ -81,21 +81,18 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] pb-20 md:pb-0">
       {/* Welcome Section */}
-      <section className="py-20 px-5">
+      <section className="py-16 md:py-20 px-3 md:px-5">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-12 items-start">
+          <div className="flex flex-col lg:flex-row gap-8 md:gap-12 items-start">
             <div className="flex-1">
-              <p className="text-xl text-[var(--text-secondary)] mb-2">Welcome back!</p>
-              <h1 className="hero-headline mb-6">
-                Keep Building Your Management Skills
-              </h1>
+              <p className="text-lg md:text-xl text-[var(--text-secondary)] mb-2">Welcome back!</p>
+              <h1 className="hero-headline mb-6 text-3xl md:text-5xl">Keep Building Your Management Skills</h1>
               <p className="body-text max-w-md">
                 Continue your journey with bite-sized lessons that fit your schedule.
               </p>
             </div>
-            
-            <div className="flex-1 max-w-md bg-white p-8 rounded-2xl shadow-lg">
-              <h3 className="text-xl font-bold mb-3">Your Progress</h3>
+            <div className="flex-1 max-w-md bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+              <h3 className="text-lg md:text-xl font-bold mb-3">Your Progress</h3>
               <p className="text-[var(--text-secondary)] text-base mb-6">
                 You've completed {completedChapters} out of {totalChapters} chapters
               </p>
@@ -110,16 +107,15 @@ export default function Dashboard() {
 
       {/* Continue Learning */}
       {recentChapters.length > 0 && (
-        <section className="py-16 px-5">
+        <section className="py-12 md:py-16 px-3 md:px-5">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
+            <div className="text-center mb-8 md:mb-12">
               <h2 className="section-header mb-4">Continue Your Journey</h2>
               <p className="text-[var(--text-secondary)] text-lg max-w-2xl mx-auto">
                 Pick up where you left off or explore new topics
               </p>
             </div>
-            
-            <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <div className="grid md:grid-cols-2 gap-6 md:gap-8 mb-8 md:mb-12 overflow-x-auto">
               {recentChapters.map((chapter: any) => (
                 <div
                   key={chapter.id}
@@ -151,16 +147,15 @@ export default function Dashboard() {
       )}
 
       {/* Categories Overview */}
-      <section className="py-16 px-5">
+      <section className="py-12 md:py-16 px-3 md:px-5">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8 md:mb-12">
             <h2 className="section-header mb-4">Explore All Topics</h2>
             <p className="text-[var(--text-secondary)] text-lg max-w-2xl mx-auto">
               Master the three pillars of effective management
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8 overflow-x-auto">
             {categoriesWithProgress.map((category: any) => (
               <div
                 key={category.id}
@@ -199,7 +194,6 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
-
       <MobileNav />
     </div>
   );

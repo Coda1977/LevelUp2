@@ -180,9 +180,9 @@ export default function Team() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto p-4 pb-20">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      <div className="max-w-7xl mx-auto p-3 md:p-4 pb-20">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Team Management
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -191,7 +191,7 @@ export default function Team() {
         </div>
 
         {/* Team Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8 overflow-x-auto">
           <Card className="bg-white dark:bg-gray-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -266,7 +266,7 @@ export default function Team() {
         </div>
 
         {/* Invite Member */}
-        <Card className="bg-white dark:bg-gray-800 mb-8">
+        <Card className="bg-white dark:bg-gray-800 mb-6 md:mb-8">
           <CardHeader>
             <CardTitle className="text-gray-900 dark:text-white">
               Invite New Member
@@ -296,7 +296,7 @@ export default function Team() {
         </Card>
 
         {/* Members List */}
-        <Card className="bg-white dark:bg-gray-800">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-6 mb-6 md:mb-8 overflow-x-auto">
           <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <CardTitle className="text-gray-900 dark:text-white">
@@ -395,7 +395,7 @@ export default function Team() {
               )}
             </div>
           </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );

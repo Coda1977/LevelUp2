@@ -81,12 +81,10 @@ export default function Learn() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] pb-20 md:pb-0">
       {/* Header */}
-      <section className="py-20 px-5 text-center">
+      <section className="py-16 md:py-20 px-3 md:px-5 text-center">
         <div className="max-w-4xl mx-auto">
-          <h1 className="hero-headline mb-6">
-            Your Learning Journey
-          </h1>
-          <p className="text-xl text-[var(--text-secondary)] max-w-2xl mx-auto">
+          <h1 className="hero-headline mb-6 text-3xl md:text-5xl">Your Learning Journey</h1>
+          <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto">
             Master management through bite-sized lessons. Progress at your own pace through these three essential areas.
           </p>
         </div>
@@ -94,28 +92,27 @@ export default function Learn() {
 
       {/* Categories */}
       {categoriesWithChapters.map((category: any) => (
-        <section key={category.id} className="py-16 px-5">
+        <section key={category.id} className="py-12 md:py-16 px-3 md:px-5">
           <div className="max-w-6xl mx-auto">
             {/* Category Header */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg mb-12">
-              <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg mb-8 md:mb-12">
+              <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-white border-4 border-[var(--text-primary)] rounded-2xl flex items-center justify-center">
                     <div className="w-6 h-6 bg-[var(--text-primary)] rounded-lg"></div>
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold mb-2">{category.title}</h2>
-                    <div className="text-[var(--text-secondary)] text-lg prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: category.description }} />
+                    <h2 className="text-xl md:text-2xl font-bold mb-2">{category.title}</h2>
+                    <div className="text-[var(--text-secondary)] text-base md:text-lg prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: category.description }} />
                   </div>
                 </div>
-                
                 <div className="lg:ml-auto text-right">
                   <p className="text-[var(--text-secondary)] mb-2">
                     {category.progress === category.total ? 'Complete!' : 
                      category.progress === 0 ? 'Just getting started' :
                      'Making progress'}
                   </p>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 overflow-x-auto">
                     {Array.from({ length: category.total }, (_, i) => (
                       <div
                         key={i}
@@ -129,7 +126,7 @@ export default function Learn() {
                       />
                     ))}
                   </div>
-                  <p className="text-xl font-bold">
+                  <p className="text-lg md:text-xl font-bold">
                     {Math.round((category.progress / category.total) * 100)}%
                   </p>
                 </div>
@@ -137,7 +134,7 @@ export default function Learn() {
             </div>
 
             {/* Chapters Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 overflow-x-auto">
               {category.chapters.map((chapter: any) => (
                 <ChapterCard
                   key={chapter.id}
@@ -149,7 +146,6 @@ export default function Learn() {
           </div>
         </section>
       ))}
-
       <MobileNav />
     </div>
   );
