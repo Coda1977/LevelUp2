@@ -47,13 +47,29 @@ export default function Landing() {
         </div>
       </section>
       {/* Features Section */}
-      <section className="py-16 md:py-32 bg-white">
-        <div className="max-w-4xl mx-auto px-3 md:px-5 text-center">
+      <section className="py-16 md:py-32 bg-gradient-to-b from-orange-50/30 to-white relative overflow-hidden">
+        {/* Subtle accent elements */}
+        <div className="absolute top-8 left-8 w-2 h-16 bg-[var(--accent-yellow)] rounded-full opacity-30"></div>
+        <div className="absolute top-20 right-12 w-3 h-3 bg-[var(--accent-blue)] rounded-full opacity-40"></div>
+        <div className="absolute bottom-12 left-1/4 w-1 h-8 bg-[var(--accent-yellow)] rounded-full opacity-25"></div>
+        
+        <div className="max-w-4xl mx-auto px-3 md:px-5 text-center relative">
           <h2 className="section-header mb-8 md:mb-12">No More "What Was That Tool Again?"</h2>
-          <p className="text-xl md:text-2xl text-[var(--text-secondary)] mb-6">You've done the program. Now it's time to use it.</p>
-          <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-3xl mx-auto leading-relaxed">
-            LevelUp helps you lead on purpose. Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
-          </p>
+          <p className="text-xl md:text-2xl text-[var(--text-secondary)] mb-8 font-medium">You've done the program. Now it's time to use it.</p>
+          <div className="bg-white/70 backdrop-blur-sm p-8 md:p-10 rounded-2xl shadow-sm border border-orange-100/50">
+            <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-3xl mx-auto leading-relaxed">
+              LevelUp helps you <span className="relative inline-block">
+                <span className="relative z-10 font-semibold text-[var(--text-primary)]">lead on purpose</span>
+                <span className="absolute left-0 bottom-0 w-full h-1/2 bg-[var(--accent-yellow)]/30 rounded"></span>
+              </span>. Not just get through the day, but <span className="relative inline-block">
+                <span className="relative z-10 font-semibold text-[var(--text-primary)]">grow your team</span>
+                <span className="absolute left-0 bottom-0 w-full h-1/2 bg-[var(--accent-yellow)]/30 rounded"></span>
+              </span>, <span className="relative inline-block">
+                <span className="relative z-10 font-semibold text-[var(--text-primary)]">coach through the hard stuff</span>
+                <span className="absolute left-0 bottom-0 w-full h-1/2 bg-[var(--accent-yellow)]/30 rounded"></span>
+              </span>, and build habits that make you proud of how you manage—not just what you deliver.
+            </p>
+          </div>
         </div>
       </section>
       {/* How It Works */}
