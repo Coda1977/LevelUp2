@@ -21,11 +21,7 @@ export default function Landing() {
               </Button>
             </div>
             <div className="flex-1 flex justify-center md:justify-end">
-              <div className="bg-white p-8 rounded-3xl shadow-lg">
-                <div className="text-right mb-4">
-                  <span className="text-black font-bold text-lg">Level</span>
-                  <span className="text-[#FFD700] font-bold text-lg">Up</span>
-                </div>
+              <div className="bg-[#F0EDE6] p-8 rounded-3xl shadow-lg">
                 <img 
                   src={heroImage} 
                   alt="Hand-drawn cube illustration representing structured learning" 
