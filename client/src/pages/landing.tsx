@@ -44,7 +44,6 @@ export default function Landing() {
                   className="w-64 md:w-80 lg:w-96 h-auto rounded-2xl shadow-2xl hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute -top-4 -right-4 w-8 h-8 bg-[var(--accent-yellow)] rounded-full animate-pulse"></div>
-                <div className="absolute -bottom-4 -left-4 w-6 h-6 bg-[var(--accent-blue)] rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
               </div>
             </div>
           </div>
