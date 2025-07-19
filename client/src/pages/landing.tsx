@@ -11,9 +11,7 @@ export default function Landing() {
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Left side - Text content */}
             <div className="text-center md:text-left">
-              <h1 className="hero-headline mb-6 text-3xl md:text-5xl leading-tight">
-                Take Your Program Knowledge Into Work Life
-              </h1>
+              <h1 className="hero-headline mb-6 text-3xl md:text-5xl leading-tight">Transforming Insight Into Action</h1>
               
               <Button
                 onClick={() => window.location.href = "/api/login"}
