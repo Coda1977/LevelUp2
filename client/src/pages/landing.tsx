@@ -48,37 +48,12 @@ export default function Landing() {
       </section>
       {/* Features Section */}
       <section className="py-16 md:py-32 bg-white">
-        <div className="max-w-6xl mx-auto px-3 md:px-5">
-          <h2 className="section-header text-center mb-12 md:mb-16">Learn What Matters</h2>
-          <div className="grid md:grid-cols-3 gap-8 md:gap-12 overflow-x-auto">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-[var(--accent-yellow)] rounded-2xl flex items-center justify-center text-3xl font-black mb-6 mx-auto">
-                1
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Foundations</h3>
-              <p className="text-[var(--text-secondary)]">
-                Master core principles to define your role and lead confidently
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-[var(--accent-yellow)] rounded-2xl flex items-center justify-center text-3xl font-black mb-6 mx-auto">
-                2
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Growing Teams</h3>
-              <p className="text-[var(--text-secondary)]">
-                Motivate, coach, and delegate effectively. Turn potential into performance.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-[var(--accent-yellow)] rounded-2xl flex items-center justify-center text-3xl font-black mb-6 mx-auto">
-                3
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Meeting People</h3>
-              <p className="text-[var(--text-secondary)]">
-                Master conversations that matter. Build influence through better communication.
-              </p>
-            </div>
-          </div>
+        <div className="max-w-4xl mx-auto px-3 md:px-5 text-center">
+          <h2 className="section-header mb-8 md:mb-12">No More "What Was That Tool Again?"</h2>
+          <p className="text-xl md:text-2xl text-[var(--text-secondary)] mb-6">You've done the program. Now it's time to use it.</p>
+          <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-3xl mx-auto leading-relaxed">
+            LevelUp helps you lead on purpose. Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
+          </p>
         </div>
       </section>
       {/* How It Works */}
@@ -86,17 +61,26 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-3 md:px-5">
           <h2 className="section-header text-center mb-12 md:mb-16">Simple by Design</h2>
           <div className="grid md:grid-cols-3 gap-6 md:gap-8 overflow-x-auto">
-            <div className="bg-white p-8 rounded-2xl text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <h3 className="text-xl font-bold mb-3">Learn on the Go</h3>
+            <div className="bg-white p-8 rounded-2xl text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative">
+              <div className="absolute top-4 left-4 w-8 h-8 bg-[var(--accent-yellow)] rounded-full flex items-center justify-center text-sm font-bold text-black">
+                1
+              </div>
+              <h3 className="text-xl font-bold mb-3 mt-4">Learn on the Go</h3>
               <p className="text-[var(--text-secondary)]">5-minute lessons with videos and podcasts for busy schedules.</p>
             </div>
-            <div className="bg-white p-8 rounded-2xl text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <h3 className="text-xl font-bold mb-3">Get Personalized Guidance</h3>
+            <div className="bg-white p-8 rounded-2xl text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative">
+              <div className="absolute top-4 left-4 w-8 h-8 bg-[var(--accent-yellow)] rounded-full flex items-center justify-center text-sm font-bold text-black">
+                2
+              </div>
+              <h3 className="text-xl font-bold mb-3 mt-4">Personalized Guidance</h3>
               <p className="text-[var(--text-secondary)]">Chat with an AI mentor to tackle real-world challenges.</p>
             </div>
-            <div className="bg-white p-8 rounded-2xl text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <h3 className="text-xl font-bold mb-3">Apply Skills Instantly</h3>
-              <p className="text-[var(--text-secondary)]">Use microtools to put learning into action right away.</p>
+            <div className="bg-white p-8 rounded-2xl text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative">
+              <div className="absolute top-4 left-4 w-8 h-8 bg-[var(--accent-yellow)] rounded-full flex items-center justify-center text-sm font-bold text-black">
+                3
+              </div>
+              <h3 className="text-xl font-bold mb-3 mt-4">Dive Deep</h3>
+              <p className="text-[var(--text-secondary)]">Long form summaries of the greatest management books.</p>
             </div>
           </div>
         </div>
