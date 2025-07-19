@@ -47,13 +47,22 @@ export default function Landing() {
         </div>
       </section>
       {/* Features Section */}
-      <section className="py-16 md:py-32 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-3 md:px-5 text-center">
-          <h2 className="section-header mb-8 md:mb-12 text-3xl md:text-4xl font-bold">No More "What Was That Tool Again?"</h2>
-          <p className="text-xl md:text-2xl text-[var(--text-secondary)] mb-8 font-medium">You've done the program. Now it's time to use it.</p>
-          <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-3xl mx-auto leading-relaxed">
-            LevelUp helps you <strong className="text-[var(--text-primary)]">lead on purpose</strong>. Not just get through the day, but <strong className="text-[var(--text-primary)]">grow your team</strong>, <strong className="text-[var(--text-primary)]">coach through the hard stuff</strong>, and build habits that make you proud of how you manage—not just what you deliver.
-          </p>
+      <section className="py-16 md:py-32 bg-white">
+        <div className="max-w-4xl mx-auto px-3 md:px-5">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-[var(--text-primary)]">
+              No More <span className="italic">"What Was That Tool Again?"</span>
+            </h2>
+            <p className="text-xl md:text-2xl text-[var(--text-secondary)] font-medium">
+              You've done the program. Now it's time to use it.
+            </p>
+          </div>
+          
+          <div className="bg-[var(--accent-yellow)] p-8 md:p-12 rounded-3xl text-center">
+            <p className="text-xl md:text-2xl text-[var(--text-primary)] font-medium leading-relaxed max-w-3xl mx-auto">
+              LevelUp helps you lead on purpose. Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
+            </p>
+          </div>
         </div>
       </section>
       {/* How It Works */}
