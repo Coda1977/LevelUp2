@@ -34,22 +34,28 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="max-w-4xl mx-auto px-3 md:px-5 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-black">
+      <section className="py-16 md:py-24 bg-gradient-to-b from-[#F5F5F0] to-white">
+        <div className="max-w-3xl mx-auto px-3 md:px-5 flex flex-col items-center text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-2 text-black relative inline-block">
             No More <span className="italic">"What Was That Tool Again?"</span>
+            <span className="block h-1 w-2/3 mx-auto mt-2 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full"></span>
           </h2>
-          <p className="text-lg text-gray-600 mb-12">
+          <p className="text-lg text-gray-600 mb-10 max-w-xl">
             You've done the program. Now it's time to use it.
           </p>
-          
-          <div className="bg-[#FFD700] p-8 md:p-12 rounded-2xl text-center max-w-2xl mx-auto">
-            <p className="text-lg font-bold text-black mb-4">
-              LevelUp helps you lead on purpose.
-            </p>
-            <p className="text-sm text-black leading-relaxed">
-              Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
-            </p>
+
+          <div className="relative w-full max-w-2xl">
+            <div className="flex bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="bg-[#FFD700] w-2 md:w-3 flex-shrink-0"></div>
+              <div className="p-6 md:p-8 flex-1 text-left">
+                <div className="font-bold text-xl md:text-2xl text-black mb-2">
+                  LevelUp helps you lead on purpose.
+                </div>
+                <div className="text-gray-700 text-base md:text-lg">
+                  Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
