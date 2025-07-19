@@ -1,37 +1,55 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import heroImage from "@assets/Hand-drawn sketch in electric vivid colors, rough textured pencil strokes. White background. Stacked, three-dimensional prism with subtle grayscale planes and a faint teal edge_1752939852785.jpg";
 
 export default function Landing() {
   return (
     <div className="bg-[var(--bg-primary)]">
       {/* Hero Section */}
       <section className="py-16 md:py-32 px-3 md:px-5">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Updated logo with yellow undermark for 'Up' */}
-          <h1 className="hero-headline mb-6 text-3xl md:text-5xl leading-tight">
-            Take Your Program Knowledge Into Work Life
-          </h1>
-          <div className="flex justify-center items-center mb-6">
-            <span className="text-4xl md:text-6xl font-extrabold tracking-tight">
-              Level
-              <span className="relative inline-block">
-                <span className="z-10 relative">Up</span>
-                <span
-                  className="absolute left-0 bottom-0 w-full h-1/2 bg-yellow-300 z-0 rounded"
-                  style={{ height: '50%', bottom: 0, zIndex: 0 }}
-                ></span>
-              </span>
-            </span>
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            {/* Left side - Text content */}
+            <div className="text-center md:text-left">
+              <h1 className="hero-headline mb-6 text-3xl md:text-5xl leading-tight">
+                Take Your Program Knowledge Into Work Life
+              </h1>
+              <div className="flex justify-center md:justify-start items-center mb-6">
+                <span className="text-4xl md:text-6xl font-extrabold tracking-tight">
+                  Level
+                  <span className="relative inline-block">
+                    <span className="z-10 relative">Up</span>
+                    <span
+                      className="absolute left-0 bottom-0 w-full h-1/2 bg-yellow-300 z-0 rounded"
+                      style={{ height: '50%', bottom: 0, zIndex: 0 }}
+                    ></span>
+                  </span>
+                </span>
+              </div>
+              <p className="text-lg md:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto md:mx-0">
+                Review and chat with program materials on your terms and your situation.
+              </p>
+              <Button
+                onClick={() => window.location.href = "/api/login"}
+                className="bg-[var(--text-primary)] text-[var(--bg-primary)] px-8 md:px-12 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:-translate-y-1 transition-all duration-300 min-w-[180px]"
+              >
+                Get Started
+              </Button>
+            </div>
+            
+            {/* Right side - Hero image */}
+            <div className="flex justify-center md:justify-end">
+              <div className="relative">
+                <img 
+                  src={heroImage} 
+                  alt="Colorful 3D cube representing structured learning and growth" 
+                  className="w-64 md:w-80 lg:w-96 h-auto rounded-2xl shadow-2xl hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute -top-4 -right-4 w-8 h-8 bg-[var(--accent-yellow)] rounded-full animate-pulse"></div>
+                <div className="absolute -bottom-4 -left-4 w-6 h-6 bg-[var(--accent-blue)] rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+              </div>
+            </div>
           </div>
-          <p className="text-lg md:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto">
-            Review and chat with program materials on your terms and your situation.
-          </p>
-          <Button
-            onClick={() => window.location.href = "/api/login"}
-            className="bg-[var(--text-primary)] text-[var(--bg-primary)] px-8 md:px-12 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:-translate-y-1 transition-all duration-300 min-w-[180px]"
-          >
-            Get Started
-          </Button>
         </div>
       </section>
 
