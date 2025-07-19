@@ -7,19 +7,30 @@ export default function Landing() {
     <div className="bg-[var(--bg-primary)]">
       {/* Hero Section */}
       <section className="py-16 md:py-32 px-3 md:px-5">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="hero-headline mb-6 text-3xl md:text-5xl leading-tight">
-            Take Your Program Knowledge Into Work Life
-          </h1>
-          <p className="text-lg md:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto">
-            Review and chat with program materials on your terms and your situation.
-          </p>
-          <Button
-            onClick={() => window.location.href = "/api/login"}
-            className="bg-[var(--text-primary)] text-[var(--bg-primary)] px-8 md:px-12 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:-translate-y-1 transition-all duration-300 min-w-[180px]"
-          >
-            Get Started
-          </Button>
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+            <div className="flex-1 text-center md:text-left">
+              <h1 className="hero-headline mb-6 text-3xl md:text-5xl leading-tight">
+                Take Your Program Knowledge Into Work Life
+              </h1>
+              <p className="text-lg md:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl">
+                Review and chat with program materials on your terms and your situation.
+              </p>
+              <Button
+                onClick={() => window.location.href = "/api/login"}
+                className="bg-[var(--text-primary)] text-[var(--bg-primary)] px-8 md:px-12 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:-translate-y-1 transition-all duration-300 min-w-[180px]"
+              >
+                Get Started
+              </Button>
+            </div>
+            <div className="flex-1 flex justify-center md:justify-end">
+              <img 
+                src={heroImage} 
+                alt="Hand-drawn cube illustration representing structured learning" 
+                className="w-64 h-64 md:w-80 md:h-80 object-contain"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
