@@ -7,9 +7,22 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="py-16 md:py-32 px-3 md:px-5">
         <div className="max-w-4xl mx-auto text-center">
+          {/* Updated logo with yellow undermark for 'Up' */}
           <h1 className="hero-headline mb-6 text-3xl md:text-5xl leading-tight">
             Take Your Program Knowledge Into Work Life
           </h1>
+          <div className="flex justify-center items-center mb-6">
+            <span className="text-4xl md:text-6xl font-extrabold tracking-tight">
+              Level
+              <span className="relative inline-block">
+                <span className="z-10 relative">Up</span>
+                <span
+                  className="absolute left-0 bottom-0 w-full h-1/2 bg-yellow-300 z-0 rounded"
+                  style={{ height: '50%', bottom: 0, zIndex: 0 }}
+                ></span>
+              </span>
+            </span>
+          </div>
           <p className="text-lg md:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto">
             Review and chat with program materials on your terms and your situation.
           </p>
@@ -33,7 +46,7 @@ export default function Landing() {
               </div>
               <h3 className="text-2xl font-bold mb-4">Foundations</h3>
               <p className="text-[var(--text-secondary)]">
-                Core principles every manager needs. Define your role and build confidence.
+                Master core principles to define your role and lead confidently
               </p>
             </div>
             <div className="text-center">
@@ -64,16 +77,16 @@ export default function Landing() {
           <h2 className="section-header text-center mb-12 md:mb-16">Simple by Design</h2>
           <div className="grid md:grid-cols-3 gap-6 md:gap-8 overflow-x-auto">
             <div className="bg-white p-8 rounded-2xl text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <h3 className="text-xl font-bold mb-3">Short Lessons</h3>
-              <p className="text-[var(--text-secondary)]">5min. lessons with videos and podcasts for learners</p>
+              <h3 className="text-xl font-bold mb-3">Learn on the Go</h3>
+              <p className="text-[var(--text-secondary)]">5-minute lessons with videos and podcasts for busy schedules.</p>
             </div>
             <div className="bg-white p-8 rounded-2xl text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <h3 className="text-xl font-bold mb-3">AI Coach</h3>
-              <p className="text-[var(--text-secondary)]">Chat with program materials</p>
+              <h3 className="text-xl font-bold mb-3">Get Personalized Guidance</h3>
+              <p className="text-[var(--text-secondary)]">Chat with an AI mentor to tackle real-world challenges.</p>
             </div>
             <div className="bg-white p-8 rounded-2xl text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <h3 className="text-xl font-bold mb-3">Microtools</h3>
-              <p className="text-[var(--text-secondary)]">Small tools to use on a daily basis</p>
+              <h3 className="text-xl font-bold mb-3">Apply Skills Instantly</h3>
+              <p className="text-[var(--text-secondary)]">Use microtools to put learning into action right away.</p>
             </div>
           </div>
         </div>
