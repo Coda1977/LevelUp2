@@ -59,8 +59,11 @@ export default function Landing() {
           </div>
           
           <div className="bg-[var(--accent-yellow)] p-8 md:p-12 rounded-3xl text-center">
-            <p className="text-xl md:text-2xl text-[var(--text-primary)] font-medium leading-relaxed max-w-3xl mx-auto">
-              LevelUp helps you lead on purpose. Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
+            <p className="text-xl md:text-2xl text-[var(--text-primary)] font-bold mb-6 max-w-3xl mx-auto">
+              LevelUp helps you lead on purpose.
+            </p>
+            <p className="text-lg md:text-xl text-[var(--text-primary)] font-medium leading-relaxed max-w-3xl mx-auto">
+              Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
             </p>
           </div>
         </div>
