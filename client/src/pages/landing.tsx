@@ -5,17 +5,6 @@ import heroImage from "@assets/Hand-drawn sketch in electric vivid colors, rough
 export default function Landing() {
   return (
     <div className="bg-[#F5F5F0]">
-      {/* Top Navigation */}
-      <nav className="flex justify-between items-center p-4 bg-[#2C2C2C]">
-        <div className="text-white font-bold text-lg">Level Up</div>
-        <Button
-          onClick={() => window.location.href = "/api/login"}
-          className="bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100"
-        >
-          Sign In
-        </Button>
-      </nav>
-
       {/* Hero Section */}
       <section className="py-16 md:py-24 px-3 md:px-5">
         <div className="max-w-6xl mx-auto">
