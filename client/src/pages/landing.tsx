@@ -43,7 +43,6 @@ export default function Landing() {
                   alt="Colorful 3D cube representing structured learning and growth" 
                   className="w-64 md:w-80 lg:w-96 h-auto rounded-2xl shadow-2xl hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-[var(--accent-yellow)] rounded-full animate-pulse"></div>
               </div>
             </div>
           </div>
