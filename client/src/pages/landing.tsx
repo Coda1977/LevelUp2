@@ -26,9 +26,7 @@ export default function Landing() {
                   </span>
                 </span>
               </div>
-              <p className="text-lg md:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto md:mx-0">
-                Review and chat with program materials on your terms and your situation.
-              </p>
+              <p className="text-lg md:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto md:mx-0">Review and chat with program content on your terms.</p>
               <Button
                 onClick={() => window.location.href = "/api/login"}
                 className="bg-[var(--text-primary)] text-[var(--bg-primary)] px-8 md:px-12 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:-translate-y-1 transition-all duration-300 min-w-[180px]"
@@ -52,7 +50,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* Features Section */}
       <section className="py-16 md:py-32 bg-white">
         <div className="max-w-6xl mx-auto px-3 md:px-5">
@@ -88,7 +85,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* How It Works */}
       <section className="py-16 md:py-32 bg-[var(--bg-primary)]">
         <div className="max-w-6xl mx-auto px-3 md:px-5">
@@ -109,7 +105,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section className="py-16 md:py-32 bg-[var(--accent-blue)] text-white">
         <div className="max-w-4xl mx-auto px-3 md:px-5 text-center">
