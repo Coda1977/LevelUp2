@@ -10,9 +10,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
             <div className="flex-1 text-center md:text-left">
-              <h1 className="hero-headline mb-6 text-3xl md:text-5xl leading-tight">
-                Take Your Program Knowledge Into Work Life
-              </h1>
+              <h1 className="hero-headline mb-6 md:text-5xl text-[48px]">Transforming Insight into Action</h1>
               
               <Button
                 onClick={() => window.location.href = "/api/login"}
@@ -31,7 +29,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* Features Section */}
       <section className="py-16 md:py-32 bg-white">
         <div className="max-w-4xl mx-auto px-3 md:px-5">
