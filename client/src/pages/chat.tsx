@@ -284,7 +284,6 @@ export default function Chat() {
           ))}
         </div>
       </aside>
-
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col items-center">
         {/* Header */}
@@ -293,7 +292,7 @@ export default function Chat() {
             <div className="w-12 h-12 bg-[var(--accent-blue)] rounded-full flex items-center justify-center shadow-lg animate-pulse">
               <span className="text-white text-2xl font-black">∞</span>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Level Up AI Mentor</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight">AI Mentor</h1>
           </div>
           <p className="text-[var(--text-secondary)] text-base text-center max-w-xl">
             Get practical, personalized management advice and scenario practice. Your chat is private and always evolving with new content.
@@ -449,7 +448,6 @@ export default function Chat() {
           </div>
         </div>
       </div>
-
       <MobileNav />
     </div>
   );
