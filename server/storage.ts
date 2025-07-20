@@ -273,6 +273,12 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(chatSessions).where(eq(chatSessions.userId, userId));
   }
 
+  async deleteChatSession(userId: string, sessionId: string): Promise<void> {
+    await db.delete(chatSessions).where(
+      and(eq(chatSessions.userId, userId), eq(chatSessions.sessionId, sessionId))
+    );
+  }
+
   // Analytics operations
   async getAnalytics(): Promise<any> {
     // Calculate real analytics from database

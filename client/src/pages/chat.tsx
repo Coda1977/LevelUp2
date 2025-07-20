@@ -267,26 +267,37 @@ You are a knowledgeable, experienced management coach who is:
       return;
     }
     
-    const updatedSessions = sessions.filter(s => s.id !== chatId);
-    setSessions(updatedSessions);
-    
-    // If we deleted the currently selected chat, switch to the first remaining one
-    if (selectedSessionId === chatId) {
-      setSelectedSessionId(updatedSessions[0].id);
-    }
-    
-    toast({
-      title: "Chat deleted",
-      description: "Your chat session has been removed.",
-    });
-    
-    // In real code, also delete from backend
-    // Refetch sessions from backend
-    const sessionRes = await fetch('/api/chat/sessions');
-    const sessionList = await sessionRes.json();
-    setSessions(sessionList);
-    if (!sessionList.find((s: any) => s.id === selectedSessionId) && sessionList.length > 0) {
-      setSelectedSessionId(sessionList[0].id);
+    try {
+      // Delete from backend
+      const res = await fetch(`/api/chat/session/${chatId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to delete chat');
+      }
+      
+      // Refetch sessions from backend
+      const sessionRes = await fetch('/api/chat/sessions');
+      const sessionList = await sessionRes.json();
+      setSessions(sessionList);
+      
+      // If we deleted the currently selected chat, switch to the first remaining one
+      if (selectedSessionId === chatId && sessionList.length > 0) {
+        setSelectedSessionId(sessionList[0].id);
+      }
+      
+      toast({
+        title: "Chat deleted",
+        description: "Your chat session has been removed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete chat session. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

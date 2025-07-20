@@ -339,6 +339,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/chat/session/:sessionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { sessionId } = req.params;
+      
+      if (!sessionId) {
+        return res.status(400).json({ message: "Session ID is required" });
+      }
+
+      await storage.deleteChatSession(userId, sessionId);
+      res.json({ message: "Chat session deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
+      res.status(500).json({ message: 'Failed to delete chat session' });
+    }
+  });
+
   // Helper: Find relevant chapters by keyword match
   function findRelevantChapters(query: string, chapters: any[]) {
     const q = query.toLowerCase();
