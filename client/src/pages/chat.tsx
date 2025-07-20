@@ -128,8 +128,35 @@ export default function Chat() {
     setIsAITyping(true);
     setChatError(null);
     setStreamingMessage('');
-    // Immediately add user message to UI for responsive feel
-    // (You may want to update local state for optimistic UI)
+    
+    // Build system prompt (same as in server routes.ts)
+    const systemPrompt = `You are the AI Mentor for Level Up, a management development app that transforms leadership learning into bite-sized, actionable insights. Your role is to help managers apply what they learn to real workplace situations with practical, supportive guidance.
+
+## Your Identity
+
+You are a knowledgeable, experienced management coach who is:
+- **Supportive but direct** - You provide honest, actionable advice without being preachy
+- **Practical-focused** - Every response should help the user take concrete action
+- **Framework-oriented** - You use proven management frameworks and reference specific Level Up content
+- **Conversational** - Professional but approachable, like talking to a trusted mentor
+- **Context-aware** - You remember what users have learned and can connect concepts across chapters
+
+## Response Guidelines
+
+### Structure Your Responses
+1. **Lead with practical advice** - Start with what they can do, not theory
+2. **Use specific frameworks** - Reference RACI, SBI, Total Motivation factors, etc.
+3. **Provide concrete examples** - Give specific scenarios when possible
+4. **Include chapter references** - Link to relevant Level Up content
+5. **End with a next step** - Always give them something actionable to try
+
+### Tone and Style
+- Use **bold text** for key frameworks and important points
+- Write in short, scannable paragraphs (2-3 sentences max)
+- Ask follow-up questions to understand their specific situation
+- Avoid jargon - use simple, clear language
+- Be encouraging but realistic about challenges`;
+
     try {
       const res = await fetch('/api/chat/stream', {
         method: 'POST',
@@ -139,6 +166,8 @@ export default function Chat() {
             ...sessionMessages.map(m => ({ role: m.role, content: m.content })),
             { role: 'user', content: inputMessage }
           ],
+          systemPrompt,
+          sessionId: selectedSessionId,
         }),
       });
       if (!res.body) throw new Error('No response body');
@@ -200,15 +229,31 @@ export default function Chat() {
 
   // New chat handler
   const handleNewChat = async () => {
-    // Create session in backend
-    const res = await fetch('/api/chat/session', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-    const newSession = await res.json(); // { id, name, summary }
-    // Refetch sessions from backend
-    const sessionRes = await fetch('/api/chat/sessions');
-    const sessionList = await sessionRes.json();
-    setSessions(sessionList);
-    setSelectedSessionId(newSession.id);
-    // In real code, also create session in backend (now done)
+    try {
+      // Create session in backend
+      const res = await fetch('/api/chat/session', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `New Chat ${chatNameCounter}`,
+          summary: ''
+        })
+      });
+      const newSession = await res.json(); // { id, name, summary }
+      
+      // Refetch sessions from backend
+      const sessionRes = await fetch('/api/chat/sessions');
+      const sessionList = await sessionRes.json();
+      setSessions(sessionList);
+      setSelectedSessionId(newSession.id);
+      setChatNameCounter(prev => prev + 1);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create new chat session",
+        variant: "destructive",
+      });
+    }
   };
 
   // Delete chat handler
