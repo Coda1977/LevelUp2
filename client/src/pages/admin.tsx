@@ -376,6 +376,29 @@ export default function Admin() {
     });
   }
 
+  function handleAddChapter() {
+    setEditChapter(null);
+    setChapterData({
+      title: "",
+      slug: "",
+      description: "",
+      content: "",
+      categoryId: "",
+      chapterNumber: 1,
+      estimatedMinutes: 5,
+      podcastUrl: "",
+      podcastHeader: "Podcast",
+      videoUrl: "",
+      videoHeader: "Video",
+      contentType: 'lesson',
+      author: "",
+      readingTime: 15,
+      keyTakeaways: [],
+      audioUrl: "",
+    });
+    setShowChapterForm(true);
+  }
+
   const handleCreateCategory = (e: React.FormEvent) => {
     e.preventDefault();
     createCategoryMutation.mutate(categoryData);
@@ -590,7 +613,7 @@ export default function Admin() {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl md:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">Chapters</h2>
               <Button
-                onClick={() => setShowChapterForm(!showChapterForm)}
+                onClick={handleAddChapter}
                 className="bg-[var(--accent-yellow)] text-[var(--text-primary)] hover:bg-[var(--accent-yellow)]/80 text-lg font-semibold px-6 py-3 shadow-md"
                 disabled={categories.length === 0}
               >
