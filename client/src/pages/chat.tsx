@@ -402,7 +402,7 @@ export default function Chat() {
         <div className="w-full max-w-2xl flex-1 flex flex-col bg-white/80 rounded-2xl shadow-xl overflow-hidden border border-gray-200">
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto px-4 py-8 space-y-6" style={{ minHeight: 400 }}>
-            {sessionMessages.length === 0 && !streamingMessage ? (
+            {sessionMessages.length === 0 && !state.streamingMessage ? (
               <div className="text-center py-16 max-w-2xl mx-auto">
                 <div className="w-20 h-20 bg-white border-4 border-[var(--text-primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-pulse">
                   <span className="text-2xl font-black">∞</span>

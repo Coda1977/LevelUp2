@@ -53,6 +53,34 @@ export default function Admin() {
   // Add content type state
   const [contentType, setContentType] = useState<'lesson' | 'book_summary'>('lesson');
 
+  // Category form state
+  const [categoryData, setCategoryData] = useState({
+    title: "",
+    description: "",
+    sortOrder: 1,
+  });
+
+  // Chapter form state
+  const [chapterData, setChapterData] = useState({
+    title: "",
+    slug: "",
+    description: "",
+    content: "",
+    categoryId: "",
+    chapterNumber: 1,
+    estimatedMinutes: 5,
+    podcastUrl: "",
+    podcastHeader: "Podcast",
+    videoUrl: "",
+    videoHeader: "Video",
+    // Book summary fields
+    contentType: 'lesson' as 'lesson' | 'book_summary',
+    author: "",
+    readingTime: 15,
+    keyTakeaways: [] as string[],
+    audioUrl: "",
+  });
+
   // Auto-save draft to localStorage
   useEffect(() => {
     if (showChapterForm) {
@@ -85,34 +113,6 @@ export default function Admin() {
       const res = await fetch(`/api/chapters?page=${chapterPage}&pageSize=${chapterPageSize}`);
       return res.json();
     },
-  });
-
-  // Category form state
-  const [categoryData, setCategoryData] = useState({
-    title: "",
-    description: "",
-    sortOrder: 1,
-  });
-
-  // Chapter form state
-  const [chapterData, setChapterData] = useState({
-    title: "",
-    slug: "",
-    description: "",
-    content: "",
-    categoryId: "",
-    chapterNumber: 1,
-    estimatedMinutes: 5,
-    podcastUrl: "",
-    podcastHeader: "Podcast",
-    videoUrl: "",
-    videoHeader: "Video",
-    // Book summary fields
-    contentType: 'lesson' as 'lesson' | 'book_summary',
-    author: "",
-    readingTime: 15,
-    keyTakeaways: [] as string[],
-    audioUrl: "",
   });
 
   // Create category mutation
