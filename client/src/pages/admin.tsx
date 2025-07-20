@@ -53,6 +53,12 @@ export default function Admin() {
   // Add content type state
   const [contentType, setContentType] = useState<'lesson' | 'book_summary'>('lesson');
 
+  // Edit/delete state
+  const [editCategory, setEditCategory] = useState<Category | null>(null);
+  const [editChapter, setEditChapter] = useState<Chapter | null>(null);
+  const [deleteCategoryId, setDeleteCategoryId] = useState<number | null>(null);
+  const [deleteChapterId, setDeleteChapterId] = useState<number | null>(null);
+
   // Category form state
   const [categoryData, setCategoryData] = useState({
     title: "",
@@ -81,21 +87,21 @@ export default function Admin() {
     audioUrl: "",
   });
 
-  // Auto-save draft to localStorage
+  // Auto-save draft to localStorage (only when editing, not when adding new)
   useEffect(() => {
-    if (showChapterForm) {
+    if (showChapterForm && editChapter) {
       const savedDraft = localStorage.getItem('chapterDraft');
       if (savedDraft) {
         setChapterData(JSON.parse(savedDraft));
       }
     }
-  }, [showChapterForm]);
+  }, [showChapterForm, editChapter]);
 
   useEffect(() => {
-    if (showChapterForm) {
+    if (showChapterForm && editChapter) {
       localStorage.setItem('chapterDraft', JSON.stringify(chapterData));
     }
-  }, [chapterData, showChapterForm]);
+  }, [chapterData, showChapterForm, editChapter]);
 
   // Fetch categories and chapters
   const { data: categories = [] } = useQuery<Category[]>({
@@ -227,12 +233,6 @@ export default function Admin() {
       });
     },
   });
-
-  // Edit/delete state
-  const [editCategory, setEditCategory] = useState<Category | null>(null);
-  const [editChapter, setEditChapter] = useState<Chapter | null>(null);
-  const [deleteCategoryId, setDeleteCategoryId] = useState<number | null>(null);
-  const [deleteChapterId, setDeleteChapterId] = useState<number | null>(null);
 
   // Bulk selection state for chapters
   const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
@@ -378,6 +378,8 @@ export default function Admin() {
 
   function handleAddChapter() {
     setEditChapter(null);
+    // Clear localStorage draft for new chapters
+    localStorage.removeItem('chapterDraft');
     setChapterData({
       title: "",
       slug: "",
