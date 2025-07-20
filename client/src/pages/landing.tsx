@@ -27,32 +27,37 @@ export default function Landing() {
   const [designRef, designVisible] = useScrollFadeIn();
   const [ctaRef, ctaVisible] = useScrollFadeIn();
   return (
-    <div className="bg-[#F5F5F0]">
+    <div className="bg-[var(--bg-primary)]">
       {/* Hero Section */}
-      <section ref={heroRef} className={`relative py-20 md:py-32 px-3 md:px-5 overflow-hidden transition-opacity duration-700 ${heroVisible ? 'animate-fade-in opacity-100' : 'opacity-0'}`}>
-        {/* Gradient Accent */}
+      <section ref={heroRef} className={`relative py-20 md:py-32 px-5 md:px-10 overflow-hidden transition-opacity duration-700 ${heroVisible ? 'animate-fade-in opacity-100' : 'opacity-0'}`}>
+        {/* Geometric Background Shapes */}
         <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
-          <div className="w-full h-full bg-gradient-to-br from-blue-100/60 via-yellow-50/60 to-transparent" />
+          <div className="absolute top-20 right-10 w-32 h-32 bg-[var(--accent-yellow)] opacity-20 transform rotate-45 rounded-2xl"></div>
+          <div className="absolute bottom-32 left-16 w-24 h-24 bg-[var(--accent-blue)] opacity-15 rounded-full"></div>
+          <div className="absolute top-1/3 left-1/4 w-16 h-16 bg-[var(--accent-yellow)] opacity-10 transform rotate-12"></div>
+          <svg className="absolute bottom-20 right-20 w-40 h-40 opacity-10" viewBox="0 0 100 100">
+            <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="var(--accent-blue)" />
+          </svg>
         </div>
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
             <div className="flex-1 text-left">
-              <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-8 text-black">
+              <h1 className="text-[clamp(48px,8vw,80px)] font-black tracking-[-2px] leading-[1.1] mb-8 text-[var(--text-primary)]">
                 Transforming Insight<br />into Action
               </h1>
               <Button
                 onClick={() => window.location.href = "/api/login"}
-                className="bg-blue-700 text-white px-8 py-3 rounded-full font-medium text-lg hover:bg-[#FFD700] hover:text-black transition-colors duration-200 focus:ring-4 focus:ring-blue-200"
+                className="bg-[var(--accent-blue)] text-[var(--bg-primary)] px-10 py-4 rounded-full font-semibold text-lg hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
               >
                 Get Started
               </Button>
             </div>
-            <div className="flex-1 flex justify-center md:justify-end">
-              <div className="bg-[#F0EDE6] p-8 rounded-3xl shadow-lg">
+            <div className="flex-1 flex justify-center lg:justify-end">
+              <div className="bg-[var(--white)] p-12 rounded-2xl hover:-translate-y-2 hover:shadow-xl transition-all duration-300">
                 <img
                   src={heroImage}
                   alt="Hand-drawn cube illustration representing structured learning"
-                  className="w-48 h-48 md:w-64 md:h-64 object-contain animate-float"
+                  className="w-48 h-48 md:w-64 md:h-64 object-contain"
                 />
               </div>
             </div>
@@ -61,59 +66,58 @@ export default function Landing() {
       </section>
 
       {/* Features Section (Midsection) */}
-      <section className="py-20 md:py-28 flex flex-col items-center text-center">
-        <h1 className="font-bold text-[2.5rem] md:text-5xl mb-6 text-[#18181B]">
-          No More <span className="italic">"What Was That Tool Again?"</span>
-        </h1>
-        <h2 className="font-bold text-2xl md:text-3xl mb-4 text-[#18181B]">
-          You've done the program. Now it's time to use it.
-        </h2>
-        <h3 className="font-bold text-xl md:text-2xl mb-3" style={{ color: '#2563eb' }}>
-          Level Up helps you lead on purpose.
-        </h3>
-        <p className="font-normal text-base md:text-lg text-[#18181B] max-w-2xl mx-auto mt-2">
-          Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
-        </p>
+      <section className="py-20 md:py-32 px-5 md:px-10 flex flex-col items-center text-center">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-[clamp(32px,5vw,48px)] font-bold tracking-[-1px] mb-6 text-[var(--text-primary)]">
+            No More <span className="italic">"What Was That Tool Again?"</span>
+          </h1>
+          <h2 className="text-[clamp(32px,5vw,48px)] font-bold mb-4 text-[var(--text-primary)]">
+            You've done the program. Now it's time to use it.
+          </h2>
+          <h3 className="text-[clamp(32px,5vw,48px)] font-bold mb-3 text-[var(--accent-blue)]">
+            Level Up helps you lead on purpose.
+          </h3>
+          <p className="text-lg font-normal leading-[1.7] text-[var(--text-secondary)] max-w-2xl mx-auto mt-2">
+            Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
+          </p>
+        </div>
       </section>
 
       {/* Simple by Design Section */}
-      <section ref={designRef} className={`py-20 md:py-28 bg-[#F5F5F0] transition-opacity duration-700 ${designVisible ? 'animate-fade-in opacity-100' : 'opacity-0'}`}>
-        <div className="max-w-6xl mx-auto px-3 md:px-5">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-black">
-            Simple by Design
-          </h2>
+      <section ref={designRef} className={`py-20 md:py-32 px-5 md:px-10 bg-[var(--bg-primary)] transition-opacity duration-700 ${designVisible ? 'animate-fade-in opacity-100' : 'opacity-0'}`}>
+        <div className="max-w-6xl mx-auto">
+          {/* Geometric shapes for visual interest */}
+          <div className="relative">
+            <div className="absolute -top-10 -right-10 w-20 h-20 bg-[var(--accent-yellow)] opacity-20 transform rotate-45 rounded-lg"></div>
+            <h2 className="text-[clamp(32px,5vw,48px)] font-bold text-center mb-16 text-[var(--text-primary)]">
+              Simple by Design
+            </h2>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Add extra margin below for breathing room on mobile */}
-            {/* Card 1 */}
-            <div className="text-center transition-transform duration-200 hover:-translate-y-2 hover:shadow-xl hover:bg-blue-50 rounded-2xl">
-              <div className="w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-black font-bold text-lg">1</span>
-              </div>
-              <h3 className="text-xl font-bold mb-2 text-black">Learn on the Go</h3>
-              <p className="text-gray-600 text-sm">
+            {/* Card 1 - Following design guide template */}
+            <div className="bg-[var(--white)] p-12 rounded-2xl hover:-translate-y-2 hover:shadow-xl transition-all duration-300">
+              <div className="text-6xl font-black text-[var(--accent-yellow)] mb-4">01</div>
+              <h3 className="text-2xl font-bold mb-4 text-[var(--text-primary)]">Learn on the Go</h3>
+              <p className="text-[var(--text-secondary)]">
                 5-minute lessons with videos and podcasts for busy schedules.
               </p>
             </div>
 
             {/* Card 2 */}
-            <div className="text-center transition-transform duration-200 hover:-translate-y-2 hover:shadow-xl hover:bg-blue-50 rounded-2xl">
-              <div className="w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-black font-bold text-lg">2</span>
-              </div>
-              <h3 className="text-xl font-bold mb-2 text-black">Personalized Guidance</h3>
-              <p className="text-gray-600 text-sm">
+            <div className="bg-[var(--white)] p-12 rounded-2xl hover:-translate-y-2 hover:shadow-xl transition-all duration-300">
+              <div className="text-6xl font-black text-[var(--accent-yellow)] mb-4">02</div>
+              <h3 className="text-2xl font-bold mb-4 text-[var(--text-primary)]">Personalized Guidance</h3>
+              <p className="text-[var(--text-secondary)]">
                 Chat with an AI mentor to tackle real situations.
               </p>
             </div>
 
             {/* Card 3 */}
-            <div className="text-center transition-transform duration-200 hover:-translate-y-2 hover:shadow-xl hover:bg-blue-50 rounded-2xl">
-              <div className="w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-black font-bold text-lg">3</span>
-              </div>
-              <h3 className="text-xl font-bold mb-2 text-black">Dive Deep</h3>
-              <p className="text-gray-600 text-sm">
+            <div className="bg-[var(--white)] p-12 rounded-2xl hover:-translate-y-2 hover:shadow-xl transition-all duration-300">
+              <div className="text-6xl font-black text-[var(--accent-yellow)] mb-4">03</div>
+              <h3 className="text-2xl font-bold mb-4 text-[var(--text-primary)]">Dive Deep</h3>
+              <p className="text-[var(--text-secondary)]">
                 Long-form summaries of the greatest management books.
               </p>
             </div>
@@ -122,25 +126,28 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section ref={ctaRef} className={`py-20 md:py-28 bg-[#1B365D] transition-opacity duration-700 ${ctaVisible ? 'animate-fade-in opacity-100' : 'opacity-0'}`}>
-        <div className="max-w-4xl mx-auto px-3 md:px-5 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-white leading-tight">
+      <section ref={ctaRef} className={`py-20 md:py-32 px-5 md:px-10 bg-[var(--accent-blue)] transition-opacity duration-700 ${ctaVisible ? 'animate-fade-in opacity-100' : 'opacity-0'}`}>
+        <div className="max-w-6xl mx-auto text-center relative">
+          {/* Geometric accent shapes */}
+          <div className="absolute top-10 left-10 w-16 h-16 bg-[var(--accent-yellow)] opacity-20 transform rotate-12 rounded-lg"></div>
+          <div className="absolute bottom-10 right-10 w-12 h-12 bg-[var(--white)] opacity-20 rounded-full"></div>
+          
+          <h2 className="text-[clamp(32px,5vw,48px)] font-bold mb-8 text-[var(--white)] leading-tight">
             Action Does Not Predict Happiness, But There Is No<br />Happiness Without Action
           </h2>
           <Button
             onClick={() => window.location.href = "/api/login"}
-            className="bg-[#FFD700] text-black px-8 py-3 rounded-full font-bold text-lg hover:bg-blue-700 hover:text-white transition-colors duration-200 focus:ring-4 focus:ring-yellow-200"
+            className="bg-[var(--accent-yellow)] text-[var(--text-primary)] px-10 py-4 rounded-full font-semibold text-lg hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
           >
             Begin Your Journey
           </Button>
         </div>
       </section>
       {/* Sticky CTA for mobile */}
-      <div className="fixed bottom-4 left-0 w-full flex justify-center z-50 md:hidden pointer-events-none">
+      <div className="fixed bottom-4 left-4 right-4 flex justify-center z-50 lg:hidden">
         <button
           onClick={() => window.location.href = "/api/login"}
-          className="pointer-events-auto bg-blue-700 text-white font-bold px-8 py-3 rounded-full shadow-lg text-lg hover:bg-[#FFD700] hover:text-black transition-colors duration-200 focus:ring-4 focus:ring-blue-200"
-          style={{maxWidth: '90vw'}}
+          className="bg-[var(--accent-blue)] text-[var(--white)] font-semibold px-8 py-3 rounded-full shadow-lg text-lg hover:bg-[var(--accent-yellow)] hover:text-[var(--text-primary)] transition-all duration-300 w-full max-w-sm"
         >
           Get Started
         </button>

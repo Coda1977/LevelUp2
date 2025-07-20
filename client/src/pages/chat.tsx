@@ -1,14 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useReducer } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MobileNav } from "@/components/MobileNav";
+import { ChatSidebar } from "@/components/ChatSidebar";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Copy, Trash2, Edit2 } from "lucide-react";
+import { Send, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { apiRequest } from "@/lib/queryClient";
-import ReactMarkdown from 'react-markdown'; // If not available, install or leave as placeholder
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -16,27 +16,72 @@ interface Message {
   timestamp: string;
 }
 
-// Placeholder for chat sessions
-const mockSessions = [
-  { id: '1', name: 'Delegation Dilemma', summary: 'How to delegate more effectively' },
-  { id: '2', name: 'Feedback Challenge', summary: 'Giving tough feedback' },
-  { id: '3', name: 'Team Motivation', summary: 'How to energize my team' },
-];
+interface ChatSession {
+  id: string;
+  name: string;
+  summary: string;
+}
+
+interface ChatState {
+  sessions: ChatSession[];
+  selectedSessionId: string;
+  inputMessage: string;
+  isAITyping: boolean;
+  chatError: string | null;
+  streamingMessage: string | null;
+  sidebarOpen: boolean;
+  chatNameCounter: number;
+}
+
+type ChatAction =
+  | { type: 'SET_SESSIONS'; payload: ChatSession[] }
+  | { type: 'SELECT_SESSION'; payload: string }
+  | { type: 'SET_INPUT'; payload: string }
+  | { type: 'SET_AI_TYPING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_STREAMING'; payload: string | null }
+  | { type: 'TOGGLE_SIDEBAR' }
+  | { type: 'INCREMENT_COUNTER' };
+
+function chatReducer(state: ChatState, action: ChatAction): ChatState {
+  switch (action.type) {
+    case 'SET_SESSIONS':
+      return { ...state, sessions: action.payload };
+    case 'SELECT_SESSION':
+      return { ...state, selectedSessionId: action.payload };
+    case 'SET_INPUT':
+      return { ...state, inputMessage: action.payload };
+    case 'SET_AI_TYPING':
+      return { ...state, isAITyping: action.payload };
+    case 'SET_ERROR':
+      return { ...state, chatError: action.payload };
+    case 'SET_STREAMING':
+      return { ...state, streamingMessage: action.payload };
+    case 'TOGGLE_SIDEBAR':
+      return { ...state, sidebarOpen: !state.sidebarOpen };
+    case 'INCREMENT_COUNTER':
+      return { ...state, chatNameCounter: state.chatNameCounter + 1 };
+    default:
+      return state;
+  }
+}
 
 export default function Chat() {
   const { isAuthenticated, isLoading, user } = useAuth();
-  const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [sessions, setSessions] = useState(mockSessions); // Replace with API call
-  const [selectedSessionId, setSelectedSessionId] = useState(mockSessions[0].id);
-  const [chatNameCounter, setChatNameCounter] = useState(4);
-  const [isAITyping, setIsAITyping] = useState(false);
-  const [chatError, setChatError] = useState<string | null>(null);
-  const [renamingSessionId, setRenamingSessionId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
-  const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
+  
+  const [state, dispatch] = useReducer(chatReducer, {
+    sessions: [],
+    selectedSessionId: '',
+    inputMessage: '',
+    isAITyping: false,
+    chatError: null,
+    streamingMessage: null,
+    sidebarOpen: false,
+    chatNameCounter: 1
+  });
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -58,21 +103,20 @@ export default function Chat() {
       fetch('/api/chat/sessions')
         .then(res => res.json())
         .then(data => {
-          setSessions(data);
-          if (data.length > 0 && !data.find((s: any) => s.id === selectedSessionId)) {
-            setSelectedSessionId(data[0].id);
+          dispatch({ type: 'SET_SESSIONS', payload: data });
+          if (data.length > 0 && !data.find((s: any) => s.id === state.selectedSessionId)) {
+            dispatch({ type: 'SELECT_SESSION', payload: data[0].id });
           }
         });
     }
   }, [isLoading, isAuthenticated]);
 
-  const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
-    queryKey: ["/api/chat/history", selectedSessionId],
-    queryFn: () => fetch(`/api/chat/history/${selectedSessionId}`).then(res => res.json()),
-    enabled: isAuthenticated && !!selectedSessionId,
+  const { data: messages = [] } = useQuery<Message[]>({
+    queryKey: ["/api/chat/history", state.selectedSessionId],
+    queryFn: () => fetch(`/api/chat/history/${state.selectedSessionId}`).then(res => res.json()),
+    enabled: isAuthenticated && !!state.selectedSessionId,
   });
 
-  // Use messages directly since they're already filtered by session
   const sessionMessages = messages;
 
   const scrollToBottom = () => {
@@ -83,79 +127,16 @@ export default function Chat() {
     scrollToBottom();
   }, [messages]);
 
-  const sendMessageMutation = useMutation({
-    mutationFn: async (message: string) => {
-      setIsAITyping(true);
-      setChatError(null);
-      const response = await apiRequest("POST", "/api/chat", { message, sessionId: selectedSessionId });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/history", selectedSessionId] });
-      setInputMessage('');
-      setIsAITyping(false);
-      
-      // Auto-generate chat name from first message if current chat has default name
-      const currentSession = sessions.find(s => s.id === selectedSessionId);
-      if (currentSession && currentSession.name.startsWith('New Chat ')) {
-        generateChatName(inputMessage, currentSession.id);
-      }
-    },
-    onError: (error) => {
-      setIsAITyping(false);
-      setChatError("AI is temporarily unavailable. Please try again.");
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
+  // Simplified sendMessage function
   const sendMessage = async () => {
-    if (!inputMessage.trim() || sendMessageMutation.isPending) return;
-    setIsAITyping(true);
-    setChatError(null);
-    setStreamingMessage('');
+    if (!state.inputMessage.trim() || state.isAITyping) return;
     
-    // Build system prompt (same as in server routes.ts)
-    const systemPrompt = `You are the AI Mentor for Level Up, a management development app that transforms leadership learning into bite-sized, actionable insights. Your role is to help managers apply what they learn to real workplace situations with practical, supportive guidance.
-
-## Your Identity
-
-You are a knowledgeable, experienced management coach who is:
-- **Supportive but direct** - You provide honest, actionable advice without being preachy
-- **Practical-focused** - Every response should help the user take concrete action
-- **Framework-oriented** - You use proven management frameworks and reference specific Level Up content
-- **Conversational** - Professional but approachable, like talking to a trusted mentor
-- **Context-aware** - You remember what users have learned and can connect concepts across chapters
-
-## Response Guidelines
-
-### Structure Your Responses
-1. **Lead with practical advice** - Start with what they can do, not theory
-2. **Use specific frameworks** - Reference RACI, SBI, Total Motivation factors, etc.
-3. **Provide concrete examples** - Give specific scenarios when possible
-4. **Include chapter references** - Link to relevant Level Up content
-5. **End with a next step** - Always give them something actionable to try
-
-### Tone and Style
-- Use **bold text** for key frameworks and important points
-- Write in short, scannable paragraphs (2-3 sentences max)
-- Ask follow-up questions to understand their specific situation
-- Avoid jargon - use simple, clear language
-- Be encouraging but realistic about challenges`;
+    dispatch({ type: 'SET_AI_TYPING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+    dispatch({ type: 'SET_STREAMING', payload: '' });
+    
+    const currentMessage = state.inputMessage;
+    dispatch({ type: 'SET_INPUT', payload: '' });
 
     try {
       const res = await fetch('/api/chat/stream', {
@@ -164,48 +145,61 @@ You are a knowledgeable, experienced management coach who is:
         body: JSON.stringify({
           messages: [
             ...sessionMessages.map(m => ({ role: m.role, content: m.content })),
-            { role: 'user', content: inputMessage }
+            { role: 'user', content: currentMessage }
           ],
-          systemPrompt,
-          sessionId: selectedSessionId,
+          sessionId: state.selectedSessionId,
         }),
       });
+      
       if (!res.body) throw new Error('No response body');
+      
       const reader = res.body.getReader();
       let aiMessage = '';
-      setInputMessage('');
+      
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
+        
         const chunk = new TextDecoder().decode(value);
         for (const line of chunk.split('\n')) {
           if (line.startsWith('data:')) {
             const data = line.replace('data: ', '').trim();
             if (data === '[DONE]') {
-              setIsAITyping(false);
-              setStreamingMessage(null);
-              queryClient.invalidateQueries({ queryKey: ["/api/chat/history", selectedSessionId] });
+              dispatch({ type: 'SET_AI_TYPING', payload: false });
+              dispatch({ type: 'SET_STREAMING', payload: null });
+              queryClient.invalidateQueries({ queryKey: ["/api/chat/history", state.selectedSessionId] });
+              
+              // Auto-generate chat name from first message
+              const currentSession = state.sessions.find(s => s.id === state.selectedSessionId);
+              if (currentSession && currentSession.name.startsWith('New Chat ')) {
+                generateChatName(currentMessage, currentSession.id);
+              }
               return;
             }
+            
             try {
               const { token } = JSON.parse(data);
               if (token) {
                 aiMessage += token;
-                setStreamingMessage(aiMessage);
+                dispatch({ type: 'SET_STREAMING', payload: aiMessage });
               }
             } catch {}
           }
         }
       }
-      setIsAITyping(false);
-      setStreamingMessage(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/history", selectedSessionId] });
     } catch (error) {
-      setIsAITyping(false);
-      setStreamingMessage(null);
-      setChatError("AI is temporarily unavailable. Please try again.");
+      dispatch({ type: 'SET_AI_TYPING', payload: false });
+      dispatch({ type: 'SET_STREAMING', payload: null });
+      dispatch({ type: 'SET_ERROR', payload: "AI is temporarily unavailable. Please try again." });
+      
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
     }
   };
+
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -214,10 +208,32 @@ You are a knowledgeable, experienced management coach who is:
     }
   };
 
-  // Copy message to clipboard
-  const copyMessage = (content: string) => {
-    navigator.clipboard.writeText(content);
-    toast({ title: 'Copied to clipboard!' });
+  // Copy message to clipboard with permission check
+  const copyMessage = async (content: string) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(content);
+        toast({ title: 'Copied to clipboard!' });
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = content;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          toast({ title: 'Copied to clipboard!' });
+        } catch {
+          toast({ title: 'Failed to copy', variant: 'destructive' });
+        }
+        document.body.removeChild(textArea);
+      }
+    } catch {
+      toast({ title: 'Failed to copy', variant: 'destructive' });
+    }
   };
 
   // Static follow-up suggestions (replace with AI-generated if desired)
@@ -230,23 +246,21 @@ You are a knowledgeable, experienced management coach who is:
   // New chat handler
   const handleNewChat = async () => {
     try {
-      // Create session in backend
       const res = await fetch('/api/chat/session', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: `New Chat ${chatNameCounter}`,
+          name: `New Chat ${state.chatNameCounter}`,
           summary: ''
         })
       });
-      const newSession = await res.json(); // { id, name, summary }
+      const newSession = await res.json();
       
-      // Refetch sessions from backend
       const sessionRes = await fetch('/api/chat/sessions');
       const sessionList = await sessionRes.json();
-      setSessions(sessionList);
-      setSelectedSessionId(newSession.id);
-      setChatNameCounter(prev => prev + 1);
+      dispatch({ type: 'SET_SESSIONS', payload: sessionList });
+      dispatch({ type: 'SELECT_SESSION', payload: newSession.id });
+      dispatch({ type: 'INCREMENT_COUNTER' });
     } catch (error) {
       toast({
         title: "Error",
@@ -258,34 +272,20 @@ You are a knowledgeable, experienced management coach who is:
 
   // Delete chat handler
   const handleDeleteChat = async (chatId: string) => {
-    if (sessions.length <= 1) {
-      toast({
-        title: "Cannot delete",
-        description: "You must have at least one chat session.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     try {
-      // Delete from backend
       const res = await fetch(`/api/chat/session/${chatId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });
       
-      if (!res.ok) {
-        throw new Error('Failed to delete chat');
-      }
+      if (!res.ok) throw new Error('Failed to delete chat');
       
-      // Refetch sessions from backend
       const sessionRes = await fetch('/api/chat/sessions');
       const sessionList = await sessionRes.json();
-      setSessions(sessionList);
+      dispatch({ type: 'SET_SESSIONS', payload: sessionList });
       
-      // If we deleted the currently selected chat, switch to the first remaining one
-      if (selectedSessionId === chatId && sessionList.length > 0) {
-        setSelectedSessionId(sessionList[0].id);
+      if (state.selectedSessionId === chatId && sessionList.length > 0) {
+        dispatch({ type: 'SELECT_SESSION', payload: sessionList[0].id });
       }
       
       toast({
@@ -301,40 +301,34 @@ You are a knowledgeable, experienced management coach who is:
     }
   };
 
-  // Generate chat name from AI based on user's first message
-  const generateChatName = async (firstMessage: string, chatId: string) => {
-    try {
-      // Simple client-side name generation based on keywords
-      const keywords = firstMessage.toLowerCase();
-      let generatedName = 'General Discussion';
-      
-      if (keywords.includes('delegate') || keywords.includes('delegation')) {
-        generatedName = 'Delegation Discussion';
-      } else if (keywords.includes('feedback') || keywords.includes('review')) {
-        generatedName = 'Feedback Conversation';
-      } else if (keywords.includes('meeting') || keywords.includes('meetings')) {
-        generatedName = 'Meeting Improvement';
-      } else if (keywords.includes('team') || keywords.includes('motivation')) {
-        generatedName = 'Team Management';
-      } else if (keywords.includes('leadership') || keywords.includes('leader')) {
-        generatedName = 'Leadership Tips';
-      } else if (keywords.includes('communication') || keywords.includes('communicate')) {
-        generatedName = 'Communication Skills';
-      } else {
-        // Take first few words as fallback
-        const words = firstMessage.trim().split(' ').slice(0, 3);
-        generatedName = words.join(' ').slice(0, 20) + (firstMessage.length > 20 ? '...' : '');
-      }
-      
-      // Update the session name
-      setSessions(prev => prev.map(session => 
-        session.id === chatId 
-          ? { ...session, name: generatedName }
-          : session
-      ));
-    } catch (error) {
-      console.error('Failed to generate chat name:', error);
+  // Generate chat name from keywords
+  const generateChatName = (firstMessage: string, chatId: string) => {
+    const keywords = firstMessage.toLowerCase();
+    let generatedName = 'General Discussion';
+    
+    if (keywords.includes('delegate') || keywords.includes('delegation')) {
+      generatedName = 'Delegation Discussion';
+    } else if (keywords.includes('feedback') || keywords.includes('review')) {
+      generatedName = 'Feedback Conversation';
+    } else if (keywords.includes('meeting') || keywords.includes('meetings')) {
+      generatedName = 'Meeting Improvement';
+    } else if (keywords.includes('team') || keywords.includes('motivation')) {
+      generatedName = 'Team Management';
+    } else if (keywords.includes('leadership') || keywords.includes('leader')) {
+      generatedName = 'Leadership Tips';
+    } else if (keywords.includes('communication') || keywords.includes('communicate')) {
+      generatedName = 'Communication Skills';
+    } else {
+      const words = firstMessage.trim().split(' ').slice(0, 3);
+      generatedName = words.join(' ').slice(0, 20) + (firstMessage.length > 20 ? '...' : '');
     }
+    
+    dispatch({ 
+      type: 'SET_SESSIONS', 
+      payload: state.sessions.map(session => 
+        session.id === chatId ? { ...session, name: generatedName } : session
+      )
+    });
   };
 
   const starterPrompts = [
@@ -367,79 +361,30 @@ You are a knowledgeable, experienced management coach who is:
     );
   }
 
+  const handleRenameChat = (chatId: string, newName: string) => {
+    dispatch({ 
+      type: 'SET_SESSIONS', 
+      payload: state.sessions.map(session => 
+        session.id === chatId ? { ...session, name: newName } : session
+      )
+    });
+  };
+
   return (
-    <div className="min-h-screen flex bg-gradient-to-b from-[var(--bg-primary)] to-white">
-      {/* Sidebar */}
-      <aside className="w-72 bg-white/90 border-r border-gray-200 flex flex-col p-4 gap-4 min-h-screen">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 bg-[var(--accent-blue)] rounded-full flex items-center justify-center shadow-lg">
-            <span className="text-white text-lg font-black">∞</span>
-          </div>
-          <span className="font-bold text-lg">Your Chats</span>
-        </div>
-        <button
-          className="w-full py-2 bg-[var(--accent-yellow)] text-[var(--text-primary)] rounded-lg font-semibold hover:bg-[var(--accent-blue)] hover:text-white transition"
-          onClick={handleNewChat}
-        >
-          + New Chat
-        </button>
-        <div className="flex-1 overflow-y-auto mt-2">
-          {sessions.map(session => (
-            <div
-              key={session.id}
-              className={`group p-3 rounded-lg mb-2 cursor-pointer transition border relative ${selectedSessionId === session.id ? 'bg-[var(--accent-blue)] text-white border-[var(--accent-blue)]' : 'hover:bg-gray-100 border-transparent'}`}
-              onClick={() => setSelectedSessionId(session.id)}
-            >
-              {renamingSessionId === session.id ? (
-                <input
-                  className="font-semibold truncate pr-8 bg-white text-black border rounded px-2 py-1 w-40"
-                  value={renameValue}
-                  onChange={e => setRenameValue(e.target.value)}
-                  onBlur={() => {
-                    setSessions(prev => prev.map(s => s.id === session.id ? { ...s, name: renameValue } : s));
-                    setRenamingSessionId(null);
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      setSessions(prev => prev.map(s => s.id === session.id ? { ...s, name: renameValue } : s));
-                      setRenamingSessionId(null);
-                    }
-                  }}
-                  autoFocus
-                />
-              ) : (
-                <div className="flex items-center">
-                  <div className="font-semibold truncate pr-2">{session.name}</div>
-                  <button
-                    className="ml-1 text-xs text-gray-400 hover:text-[var(--accent-yellow)]"
-                    onClick={e => {
-                      e.stopPropagation();
-                      setRenamingSessionId(session.id);
-                      setRenameValue(session.name);
-                    }}
-                    title="Rename session"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-              {session.summary && <div className="text-xs opacity-70 truncate">{session.summary}</div>}
-              <button
-                className={`absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${selectedSessionId === session.id ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:bg-red-100 hover:text-red-600'}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteChat(session.id);
-                }}
-                title="Delete chat"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </aside>
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col items-center">
+    <ErrorBoundary>
+      <div className="min-h-screen flex bg-gradient-to-b from-[var(--bg-primary)] to-white">
+        <ChatSidebar
+          sessions={state.sessions}
+          selectedSessionId={state.selectedSessionId}
+          onSessionSelect={(sessionId) => dispatch({ type: 'SELECT_SESSION', payload: sessionId })}
+          onNewChat={handleNewChat}
+          onDeleteChat={handleDeleteChat}
+          onRenameChat={handleRenameChat}
+          isOpen={state.sidebarOpen}
+          onToggle={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
+        />
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col items-center lg:ml-0">
         {/* Header */}
         <div className="w-full max-w-2xl mx-auto px-4 pt-8 pb-4 flex flex-col items-center">
           <div className="flex items-center gap-3 mb-2">
@@ -471,7 +416,7 @@ You are a knowledgeable, experienced management coach who is:
                     <div
                       key={index}
                       className="bg-white p-5 rounded-xl border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer text-left"
-                      onClick={() => setInputMessage(prompt.preview)}
+                      onClick={() => dispatch({ type: 'SET_INPUT', payload: prompt.preview })}
                     >
                       <h3 className="font-semibold mb-2">{prompt.title}</h3>
                       <p className="text-[var(--text-secondary)] text-sm">{prompt.preview}</p>
@@ -548,7 +493,7 @@ You are a knowledgeable, experienced management coach who is:
                             <button
                               key={i}
                               className="px-3 py-1 bg-[var(--accent-yellow)] text-[var(--text-primary)] rounded-full text-xs font-semibold hover:bg-[var(--accent-blue)] hover:text-white transition"
-                              onClick={() => setInputMessage(q)}
+                              onClick={() => dispatch({ type: 'SET_INPUT', payload: q })}
                             >
                               {q}
                             </button>
@@ -559,18 +504,18 @@ You are a knowledgeable, experienced management coach who is:
                   </div>
                 ))}
                 {/* Streaming AI message */}
-                {streamingMessage && (
+                {state.streamingMessage && (
                   <div className="flex gap-3 items-end animate-fade-in">
                     <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center animate-pulse">
                       <span className="text-white font-black">∞</span>
                     </div>
                     <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-md text-base leading-relaxed">
-                      <span className="whitespace-pre-wrap">{streamingMessage}</span>
+                      <span className="whitespace-pre-wrap">{state.streamingMessage}</span>
                     </div>
                   </div>
                 )}
                 {/* Typing Indicator */}
-                {isAITyping && (
+                {state.isAITyping && !state.streamingMessage && (
                   <div className="flex gap-3 items-end animate-fade-in">
                     <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center animate-pulse">
                       <span className="text-white font-black">∞</span>
@@ -584,17 +529,17 @@ You are a knowledgeable, experienced management coach who is:
                   </div>
                 )}
                 {/* Error Message */}
-                {chatError && (
+                {state.chatError && (
                   <div className="flex gap-3 items-end animate-fade-in">
                     <div className="w-10 h-10 bg-red-500 border-2 border-red-300 rounded-full flex items-center justify-center animate-pulse">
                       <span className="text-white font-black">!</span>
                     </div>
                     <div className="bg-white border border-red-200 p-4 rounded-2xl shadow-md text-base leading-relaxed text-red-600">
-                      {chatError}
+                      {state.chatError}
                     </div>
                   </div>
                 )}
-                {sendMessageMutation.isPending && (
+                {state.isAITyping && !state.streamingMessage && (
                   <div className="flex gap-3 items-end animate-fade-in">
                     <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center">
                       <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -619,8 +564,8 @@ You are a knowledgeable, experienced management coach who is:
           <div className="sticky bottom-0 left-0 w-full bg-gradient-to-t from-white/90 to-transparent px-4 pb-4 pt-2">
             <div className="max-w-2xl mx-auto flex items-end gap-2">
               <Textarea
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
+                value={state.inputMessage}
+                onChange={(e) => dispatch({ type: 'SET_INPUT', payload: e.target.value })}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask me about management, leadership, or any Level Up topic..."
                 className="w-full pr-16 pl-5 py-4 border-2 border-gray-300 rounded-3xl text-base resize-none focus:outline-none focus:border-[var(--accent-yellow)] focus:ring-4 focus:ring-[var(--accent-yellow)] focus:ring-opacity-20 min-h-[56px] max-h-[120px] bg-white shadow-md"
@@ -628,7 +573,7 @@ You are a knowledgeable, experienced management coach who is:
               />
               <Button
                 onClick={sendMessage}
-                disabled={!inputMessage.trim() || sendMessageMutation.isPending}
+                disabled={!state.inputMessage.trim() || state.isAITyping}
                 className="absolute right-6 bottom-6 w-12 h-12 bg-[var(--accent-blue)] text-white rounded-full flex items-center justify-center hover:bg-[var(--accent-yellow)] hover:text-[var(--text-primary)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 size="icon"
               >
@@ -637,8 +582,9 @@ You are a knowledgeable, experienced management coach who is:
             </div>
           </div>
         </div>
+        </div>
+        <MobileNav />
       </div>
-      <MobileNav />
-    </div>
+    </ErrorBoundary>
   );
 }
