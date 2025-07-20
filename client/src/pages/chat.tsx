@@ -53,6 +53,19 @@ export default function Chat() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      fetch('/api/chat/sessions')
+        .then(res => res.json())
+        .then(data => {
+          setSessions(data);
+          if (data.length > 0 && !data.find((s: any) => s.id === selectedSessionId)) {
+            setSelectedSessionId(data[0].id);
+          }
+        });
+    }
+  }, [isLoading, isAuthenticated]);
+
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
     queryKey: ["/api/chat/history", selectedSessionId],
     queryFn: () => fetch(`/api/chat/history/${selectedSessionId}`).then(res => res.json()),
@@ -190,15 +203,16 @@ export default function Chat() {
     // Create session in backend
     const res = await fetch('/api/chat/session', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
     const newSession = await res.json(); // { id, name, summary }
-    // Add new session to the beginning of the list
-    setSessions(prev => [newSession, ...prev]);
-    // Switch to the new chat immediately
+    // Refetch sessions from backend
+    const sessionRes = await fetch('/api/chat/sessions');
+    const sessionList = await sessionRes.json();
+    setSessions(sessionList);
     setSelectedSessionId(newSession.id);
     // In real code, also create session in backend (now done)
   };
 
   // Delete chat handler
-  const handleDeleteChat = (chatId: string) => {
+  const handleDeleteChat = async (chatId: string) => {
     if (sessions.length <= 1) {
       toast({
         title: "Cannot delete",
@@ -222,6 +236,13 @@ export default function Chat() {
     });
     
     // In real code, also delete from backend
+    // Refetch sessions from backend
+    const sessionRes = await fetch('/api/chat/sessions');
+    const sessionList = await sessionRes.json();
+    setSessions(sessionList);
+    if (!sessionList.find((s: any) => s.id === selectedSessionId) && sessionList.length > 0) {
+      setSelectedSessionId(sessionList[0].id);
+    }
   };
 
   // Generate chat name from AI based on user's first message

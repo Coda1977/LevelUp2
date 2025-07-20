@@ -328,6 +328,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/chat/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessions = await storage.getUserChatSessions(userId);
+      res.json(sessions.map(s => ({ id: s.sessionId, name: s.name, summary: s.summary })));
+    } catch (error) {
+      console.error('Error fetching chat sessions:', error);
+      res.status(500).json({ message: 'Failed to fetch chat sessions' });
+    }
+  });
+
   // Helper: Find relevant chapters by keyword match
   function findRelevantChapters(query: string, chapters: any[]) {
     const q = query.toLowerCase();
@@ -481,12 +492,26 @@ ${references}` : ''}`;
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
       res.flushHeaders();
-      const { messages, systemPrompt } = req.body;
+      const { messages, systemPrompt, sessionId } = req.body;
+      let aiResponse = '';
       for await (const token of getChatResponseStream(messages, systemPrompt)) {
+        aiResponse += token;
         res.write(`data: ${JSON.stringify({ token })}\n\n`);
       }
       res.write('data: [DONE]\n\n');
       res.end();
+      // Persist the full AI response to the session's message history
+      if (sessionId && Array.isArray(messages)) {
+        const userId = req.user.claims.sub;
+        const session = await storage.getUserChatSession(userId, sessionId);
+        const updatedMessages = [
+          ...messages,
+          { role: 'assistant', content: aiResponse, timestamp: new Date().toISOString() }
+        ];
+        if (session) {
+          await storage.updateChatSession(userId, sessionId, updatedMessages);
+        }
+      }
     } catch (error) {
       res.write(`data: ${JSON.stringify({ error: 'Streaming failed' })}\n\n`);
       res.end();

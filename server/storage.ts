@@ -269,6 +269,10 @@ export class DatabaseStorage implements IStorage {
     return session;
   }
 
+  async getUserChatSessions(userId: string): Promise<ChatSession[]> {
+    return await db.select().from(chatSessions).where(eq(chatSessions.userId, userId));
+  }
+
   // Analytics operations
   async getAnalytics(): Promise<any> {
     // Calculate real analytics from database
