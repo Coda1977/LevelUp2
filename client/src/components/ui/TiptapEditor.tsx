@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -7,6 +7,9 @@ import { Image } from "@tiptap/extension-image";
 import { Highlight } from "@tiptap/extension-highlight";
 import { TaskList } from "@tiptap/extension-task-list";
 import { TaskItem } from "@tiptap/extension-task-item";
+import { TextAlign } from "@tiptap/extension-text-align";
+import { Color } from "@tiptap/extension-color";
+import TextStyle from "@tiptap/extension-text-style";
 
 interface TiptapEditorProps {
   value: string;
@@ -15,6 +18,8 @@ interface TiptapEditorProps {
 }
 
 export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, placeholder }) => {
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -30,6 +35,11 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, pla
       Highlight,
       TaskList,
       TaskItem,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      TextStyle,
+      Color,
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -51,6 +61,23 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, pla
   }, [value]);
 
   if (!editor) return <div className="border rounded-md p-3 bg-white text-base min-h-[160px]">Loading editor...</div>;
+
+  const colors = [
+    '#000000', // Black
+    '#666666', // Gray
+    '#FF0000', // Red
+    '#FF6600', // Orange
+    '#FFD700', // Yellow
+    '#00FF00', // Green
+    '#0066FF', // Blue
+    '#6600FF', // Purple
+    '#FF0066', // Pink
+  ];
+
+  const setTextColor = (color: string) => {
+    editor.chain().focus().setColor(color).run();
+    setShowColorPicker(false);
+  };
 
   return (
     <div>
@@ -82,6 +109,42 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ value, onChange, pla
         <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={`px-2 py-1 rounded italic transition-colors ${editor.isActive('italic') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>I</button>
         <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={`px-2 py-1 rounded underline transition-colors ${editor.isActive('underline') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>U</button>
         <button type="button" onClick={() => editor.chain().focus().toggleStrike().run()} className={`px-2 py-1 rounded line-through transition-colors ${editor.isActive('strike') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>S</button>
+        
+        {/* Text Color */}
+        <div className="relative">
+          <button 
+            type="button" 
+            onClick={() => setShowColorPicker(!showColorPicker)}
+            className="px-2 py-1 rounded transition-colors hover:bg-[var(--accent-yellow)]/60 border-2 border-current"
+            style={{ color: editor.getAttributes('textStyle').color || '#000000' }}
+          >
+            A
+          </button>
+          {showColorPicker && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-2 z-10">
+              <div className="grid grid-cols-3 gap-1">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setTextColor(color)}
+                    className="w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().unsetColor().run()}
+                className="w-full mt-2 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+              >
+                Reset Color
+              </button>
+            </div>
+          )}
+        </div>
+        
         <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={`px-2 py-1 rounded transition-colors ${editor.isActive('blockquote') ? 'bg-[var(--accent-yellow)] text-[var(--text-primary)]' : 'hover:bg-[var(--accent-yellow)]/60'}`}>&#8220; &#8221;</button>
         <button type="button" onClick={() => editor.chain().focus().setHorizontalRule().run()} className="px-2 py-1 rounded transition-colors hover:bg-[var(--accent-yellow)]/60">―</button>
       </div>
