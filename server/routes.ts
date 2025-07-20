@@ -78,7 +78,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/chapters', isAuthenticated, async (req, res) => {
     try {
-      const { title, slug, preview, content, categoryId, chapterNumber, duration, youtubeUrl, spotifyUrl } = req.body;
+      const { 
+        title, 
+        slug, 
+        preview, 
+        content, 
+        categoryId, 
+        chapterNumber, 
+        duration, 
+        youtubeUrl, 
+        spotifyUrl,
+        // Book summary fields
+        contentType,
+        author,
+        readingTime,
+        keyTakeaways,
+        audioUrl
+      } = req.body;
       // Generate slug from title if not provided
       const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
       
@@ -92,6 +108,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duration: duration || "5 min",
         youtubeUrl: youtubeUrl || null,
         spotifyUrl: spotifyUrl || null,
+        // Book summary fields
+        contentType: contentType || 'lesson',
+        author: author || null,
+        readingTime: readingTime || null,
+        keyTakeaways: keyTakeaways || null,
+        audioUrl: audioUrl || null,
       });
       res.json(chapter);
     } catch (error) {
@@ -103,7 +125,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/chapters/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { title, slug, description, content, categoryId, chapterNumber, estimatedMinutes, podcastUrl, podcastHeader, videoUrl, videoHeader } = req.body;
+      const { 
+        title, 
+        slug, 
+        description, 
+        content, 
+        categoryId, 
+        chapterNumber, 
+        estimatedMinutes, 
+        podcastUrl, 
+        podcastHeader, 
+        videoUrl, 
+        videoHeader,
+        // Book summary fields
+        contentType,
+        author,
+        readingTime,
+        keyTakeaways,
+        audioUrl
+      } = req.body;
       
       const chapter = await storage.updateChapter(id, {
         title,
@@ -117,6 +157,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         podcastHeader: podcastHeader || "Podcast",
         videoUrl: videoUrl || null,
         videoHeader: videoHeader || "Video",
+        // Book summary fields
+        contentType: contentType || 'lesson',
+        author: author || null,
+        readingTime: readingTime || null,
+        keyTakeaways: keyTakeaways || null,
+        audioUrl: audioUrl || null,
       });
       res.json(chapter);
     } catch (error) {

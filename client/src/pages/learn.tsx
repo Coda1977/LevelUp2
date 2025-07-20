@@ -26,17 +26,17 @@ export default function Learn() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<any[]>({
     queryKey: ["/api/categories"],
     enabled: isAuthenticated,
   });
 
-  const { data: chapters = [] } = useQuery({
+  const { data: chapters = [] } = useQuery<any[]>({
     queryKey: ["/api/chapters"],
     enabled: isAuthenticated,
   });
 
-  const { data: progress = [] } = useQuery({
+  const { data: progress = [] } = useQuery<any[]>({
     queryKey: ["/api/progress"],
     enabled: isAuthenticated,
   });
@@ -64,11 +64,17 @@ export default function Learn() {
         };
       });
     
-    const completedCount = categoryChapters.filter(c => c.completed).length;
+    // Separate lessons and book summaries
+    const lessons = categoryChapters.filter((c: any) => c.contentType === 'lesson' || !c.contentType);
+    const bookSummaries = categoryChapters.filter((c: any) => c.contentType === 'book_summary');
+    
+    const completedCount = categoryChapters.filter((c: any) => c.completed).length;
     
     return {
       ...category,
-      chapters: categoryChapters,
+      lessons,
+      bookSummaries,
+      chapters: categoryChapters, // Keep for backward compatibility
       progress: completedCount,
       total: categoryChapters.length,
     };
@@ -135,7 +141,7 @@ export default function Learn() {
 
             {/* Chapters Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 overflow-x-auto">
-              {category.chapters.map((chapter: any) => (
+              {category.lessons.map((chapter: any) => (
                 <ChapterCard
                   key={chapter.id}
                   chapter={chapter}
@@ -143,6 +149,81 @@ export default function Learn() {
                 />
               ))}
             </div>
+
+            {/* Book Summaries Section */}
+            {category.bookSummaries.length > 0 && (
+              <div className="mt-12">
+                <h3 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-3">
+                  <span className="text-2xl">📚</span>
+                  Book Summaries
+                </h3>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {category.bookSummaries.map((book: any) => (
+                    <div
+                      key={book.id}
+                      className={`chapter-card ${book.completed ? 'completed' : ''} cursor-pointer`}
+                      onClick={() => handleChapterClick(book)}
+                    >
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">📖</span>
+                            <div className="status-dot ${book.completed ? 'completed' : 'current'}"></div>
+                          </div>
+                          <span className="text-sm text-[var(--text-secondary)] bg-[var(--accent-yellow)] px-2 py-1 rounded-full">
+                            {book.readingTime || 15} min read
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-lg mb-2">{book.title}</h4>
+                        {book.author && (
+                          <p className="text-sm text-[var(--text-secondary)] mb-3">by {book.author}</p>
+                        )}
+                        <div className="text-sm text-[var(--text-secondary)] prose prose-sm max-w-none mb-4" 
+                             dangerouslySetInnerHTML={{ __html: book.description }} />
+                        
+                        {/* Audio Player */}
+                        {book.audioUrl && (
+                          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-lg">🎧</span>
+                              <span className="text-sm font-medium">Audio Version</span>
+                            </div>
+                            <audio 
+                              controls 
+                              className="w-full h-10"
+                              src={book.audioUrl}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Your browser does not support the audio element.
+                            </audio>
+                          </div>
+                        )}
+
+                        {/* Key Takeaways Preview */}
+                        {book.keyTakeaways && book.keyTakeaways.length > 0 && (
+                          <div className="mt-4">
+                            <p className="text-sm font-medium mb-2">Key Takeaways:</p>
+                            <ul className="text-xs text-[var(--text-secondary)] space-y-1">
+                              {book.keyTakeaways.slice(0, 2).map((takeaway: string, index: number) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <span className="text-[var(--accent-yellow)] mt-1">•</span>
+                                  <span>{takeaway}</span>
+                                </li>
+                              ))}
+                              {book.keyTakeaways.length > 2 && (
+                                <li className="text-[var(--accent-yellow)] font-medium">
+                                  +{book.keyTakeaways.length - 2} more...
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       ))}

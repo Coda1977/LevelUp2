@@ -75,10 +75,10 @@ export default function Landing() {
             <div className="flex bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="bg-[#FFD700] w-2 md:w-3 flex-shrink-0"></div>
               <div className="p-6 md:p-8 flex-1 text-left">
-                <div className="font-bold text-xl md:text-2xl text-black mb-2">
-                  LevelUp helps you lead on purpose.
+                <div className="font-bold text-xl md:text-2xl text-black mb-4">
+                  Level Up helps you lead on purpose.
                 </div>
-                <div className="text-gray-700 text-base md:text-lg">
+                <div className="text-gray-700 text-base md:text-lg leading-relaxed">
                   Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
                 </div>
               </div>

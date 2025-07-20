@@ -59,6 +59,12 @@ export const chapters = pgTable("chapters", {
   youtubeUrl: varchar("youtube_url"),
   spotifyUrl: varchar("spotify_url"),
   tryThisWeek: text("try_this_week"),
+  // Book summary fields
+  contentType: varchar("content_type").default("lesson"), // 'lesson' or 'book_summary'
+  author: varchar("author"),
+  readingTime: integer("reading_time"),
+  keyTakeaways: jsonb("key_takeaways"),
+  audioUrl: varchar("audio_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

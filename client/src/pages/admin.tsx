@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Plus, BookOpen, FolderPlus } from "lucide-react";
 import { TiptapEditor } from "@/components/ui/TiptapEditor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AudioRecorder } from "@/components/ui/AudioRecorder";
 
 // Add types for Category and Chapter
 interface Category {
@@ -33,6 +34,12 @@ interface Chapter {
   podcastHeader?: string;
   videoUrl?: string;
   videoHeader?: string;
+  // Book summary fields
+  contentType?: 'lesson' | 'book_summary';
+  author?: string;
+  readingTime?: number;
+  keyTakeaways?: string[];
+  audioUrl?: string;
 }
 
 export default function Admin() {
@@ -42,6 +49,8 @@ export default function Admin() {
   const [showChapterForm, setShowChapterForm] = useState(false);
   // Add preview mode state
   const [previewMode, setPreviewMode] = useState(false);
+  // Add content type state
+  const [contentType, setContentType] = useState<'lesson' | 'book_summary'>('lesson');
 
   // Fetch categories and chapters
   const { data: categories = [] } = useQuery<Category[]>({
@@ -72,6 +81,12 @@ export default function Admin() {
     podcastHeader: "Podcast",
     videoUrl: "",
     videoHeader: "Video",
+    // Book summary fields
+    contentType: 'lesson' as 'lesson' | 'book_summary',
+    author: "",
+    readingTime: 15,
+    keyTakeaways: [] as string[],
+    audioUrl: "",
   });
 
   // Create category mutation
@@ -125,6 +140,11 @@ export default function Admin() {
         podcastHeader: "Podcast",
         videoUrl: "",
         videoHeader: "Video",
+        contentType: 'lesson',
+        author: "",
+        readingTime: 15,
+        keyTakeaways: [],
+        audioUrl: "",
       });
       setShowChapterForm(false);
     },
@@ -164,6 +184,11 @@ export default function Admin() {
         podcastHeader: "Podcast",
         videoUrl: "",
         videoHeader: "Video",
+        contentType: 'lesson',
+        author: "",
+        readingTime: 15,
+        keyTakeaways: [],
+        audioUrl: "",
       });
       setEditChapter(null);
       setShowChapterForm(false);
@@ -229,13 +254,18 @@ export default function Admin() {
       slug: chapter.slug,
       description: chapter.description,
       content: chapter.content,
-      categoryId: chapter.categoryId?.toString() || "",
+      categoryId: chapter.categoryId.toString(),
       chapterNumber: chapter.chapterNumber,
       estimatedMinutes: chapter.estimatedMinutes,
       podcastUrl: chapter.podcastUrl || "",
       podcastHeader: chapter.podcastHeader || "Podcast",
       videoUrl: chapter.videoUrl || "",
       videoHeader: chapter.videoHeader || "Video",
+      contentType: chapter.contentType || 'lesson',
+      author: chapter.author || "",
+      readingTime: chapter.readingTime || 15,
+      keyTakeaways: chapter.keyTakeaways || [],
+      audioUrl: chapter.audioUrl || "",
     });
   }
 
@@ -474,6 +504,65 @@ export default function Admin() {
                     />
                   </div>
                   <div>
+                    <Label htmlFor="contentType">Content Type</Label>
+                    <Select 
+                      value={chapterData.contentType} 
+                      onValueChange={(value: 'lesson' | 'book_summary') => setChapterData({ ...chapterData, contentType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select content type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lesson">📝 Lesson</SelectItem>
+                        <SelectItem value="book_summary">📚 Book Summary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {chapterData.contentType === 'book_summary' && (
+                    <>
+                      <div>
+                        <Label htmlFor="author">Author</Label>
+                        <Input
+                          id="author"
+                          value={chapterData.author}
+                          onChange={(e) => setChapterData({ ...chapterData, author: e.target.value })}
+                          placeholder="e.g., Jim Collins"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="readingTime">Reading Time (minutes)</Label>
+                        <Input
+                          id="readingTime"
+                          type="number"
+                          value={chapterData.readingTime}
+                          onChange={(e) => setChapterData({ ...chapterData, readingTime: parseInt(e.target.value) })}
+                          min="1"
+                          placeholder="15"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="keyTakeaways">Key Takeaways (one per line)</Label>
+                        <textarea
+                          id="keyTakeaways"
+                          value={chapterData.keyTakeaways.join('\n')}
+                          onChange={(e) => setChapterData({ 
+                            ...chapterData, 
+                            keyTakeaways: e.target.value.split('\n').filter(takeaway => takeaway.trim())
+                          })}
+                          placeholder="Enter key takeaways, one per line..."
+                          className="w-full p-3 border border-gray-300 rounded-md min-h-[100px]"
+                        />
+                      </div>
+                      <div>
+                        <AudioRecorder
+                          audioUrl={chapterData.audioUrl}
+                          onAudioUrlChange={(url) => setChapterData({ ...chapterData, audioUrl: url })}
+                        />
+                      </div>
+                    </>
+                  )}
+                  <div>
                     <Label htmlFor="chapterSlug">URL Slug</Label>
                     <Input
                       id="chapterSlug"
@@ -632,6 +721,11 @@ export default function Admin() {
                           podcastHeader: "Podcast",
                           videoUrl: "",
                           videoHeader: "Video",
+                          contentType: 'lesson',
+                          author: "",
+                          readingTime: 15,
+                          keyTakeaways: [],
+                          audioUrl: "",
                         });
                       }}
                     >
