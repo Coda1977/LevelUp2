@@ -652,7 +652,7 @@ export default function Admin() {
 
           {/* Full-screen Dialog for Chapter Form */}
           <Dialog open={showChapterForm && categories.length > 0} onOpenChange={setShowChapterForm}>
-            <DialogContent className="fixed inset-0 w-full h-full max-w-none max-h-none p-0 bg-white flex flex-col z-50 overflow-y-auto">
+            <DialogContent className="w-[95vw] max-w-6xl h-[90vh] max-h-[90vh] p-0 bg-white flex flex-col overflow-y-auto">
               <div className="flex items-center justify-between px-8 py-6 border-b">
                 <div>
                   <DialogTitle className="text-2xl font-bold">
