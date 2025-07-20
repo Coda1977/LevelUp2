@@ -17,7 +17,7 @@ interface AudioControlsProps {
 
 export function AudioControls({ chapter }: AudioControlsProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [voice, setVoice] = useState("alloy");
+  const [voice, setVoice] = useState("shimmer");
   const [quality, setQuality] = useState("standard");
   const { toast } = useToast();
   const queryClient = useQueryClient();

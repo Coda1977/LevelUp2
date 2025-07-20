@@ -52,6 +52,14 @@ Preferred communication style: Simple, everyday language.
 - **Features**: Real-time conversations, practical application guidance
 - **Chat History**: Persistent conversation storage per user
 
+### Audio Narration System
+- **Provider**: OpenAI Text-to-Speech (TTS) API
+- **Default Voice**: Shimmer (sympathetic quality)
+- **Voice Options**: Alloy, Echo, Fable, Onyx, Nova, Shimmer
+- **Quality Settings**: Standard (faster) and HD (higher quality)
+- **Storage**: Audio files stored locally in `/public/audio/`, database stores only file paths
+- **Features**: Generate, regenerate, delete, and download audio for any chapter content
+
 ### Advanced Analytics Dashboard
 - **Metrics**: Overall progress, user activity, engagement rates
 - **Visualizations**: Progress charts, weekly activity graphs, category breakdowns
