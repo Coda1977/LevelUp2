@@ -71,14 +71,14 @@ export default function Landing() {
             You've done the program. Now it's time to use it.
           </p>
 
-          <div className="relative w-full max-w-2xl">
+          <div className="relative w-full max-w-4xl">
             <div className="flex bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="bg-[#FFD700] w-2 md:w-3 flex-shrink-0"></div>
-              <div className="p-6 md:p-8 flex-1 text-left">
-                <div className="font-bold text-xl md:text-2xl text-black mb-4">
+              <div className="p-8 md:p-12 flex-1 text-left">
+                <div className="font-bold text-2xl md:text-3xl text-black mb-6">
                   Level Up helps you lead on purpose.
                 </div>
-                <div className="text-gray-700 text-base md:text-lg leading-relaxed">
+                <div className="text-gray-700 text-lg md:text-xl leading-relaxed">
                   Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
                 </div>
               </div>
