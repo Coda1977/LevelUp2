@@ -34,6 +34,7 @@ export interface IStorage {
   // Chapter operations
   getChaptersByCategory(categoryId: number): Promise<Chapter[]>;
   getChapterBySlug(slug: string): Promise<Chapter | undefined>;
+  getChapterById(id: number): Promise<Chapter | null>;
   getAllChapters(): Promise<Chapter[]>;
   createChapter(chapter: InsertChapter): Promise<Chapter>;
   updateChapter(id: number, chapter: Partial<InsertChapter>): Promise<Chapter>;
@@ -122,6 +123,14 @@ export class DatabaseStorage implements IStorage {
       .from(chapters)
       .where(eq(chapters.slug, slug));
     return chapter;
+  }
+
+  async getChapterById(id: number): Promise<Chapter | null> {
+    const [chapter] = await db
+      .select()
+      .from(chapters)
+      .where(eq(chapters.id, id));
+    return chapter || null;
   }
 
   async getAllChapters(): Promise<Chapter[]> {

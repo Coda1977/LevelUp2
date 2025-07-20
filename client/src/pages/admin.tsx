@@ -12,6 +12,7 @@ import { Plus, BookOpen, FolderPlus } from "lucide-react";
 import { TiptapEditor } from "@/components/ui/TiptapEditor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AudioRecorder } from "@/components/ui/AudioRecorder";
+import { AudioControls } from "@/components/AudioControls";
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
 // Add types for Category and Chapter
@@ -970,18 +971,34 @@ export default function Admin() {
                                     onChange={(e) => handleSelectChapter(chapter.id, e.target.checked)}
                                     className="w-5 h-5"
                                   />
-                                  <div>
+                                  <div className="flex-1">
                                     <h3 className="font-semibold text-[var(--text-primary)] text-lg md:text-xl mb-1">{chapter.title}</h3>
                                     <div className="text-base md:text-lg text-[var(--text-secondary)] mt-1 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: chapter.description }} />
+                                    
+                                    {/* Audio Status */}
+                                    <div className="mt-2 flex items-center gap-2">
+                                      {chapter.audioUrl ? (
+                                        <span className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">
+                                          🎧 Audio Available
+                                        </span>
+                                      ) : (
+                                        <span className="text-sm text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                                          No Audio
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="flex justify-between items-center mt-2 text-sm md:text-base text-[var(--text-secondary)]">
                                       <span>Chapter {chapter.chapterNumber}</span>
                                       <span>{chapter.estimatedMinutes} min</span>
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex gap-2">
-                                  <Button size="sm" variant="outline" onClick={() => handleEditChapter(chapter)}>Edit</Button>
-                                  <Button size="sm" variant="destructive" onClick={() => setDeleteChapterId(chapter.id)}>Delete</Button>
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" onClick={() => handleEditChapter(chapter)}>Edit</Button>
+                                    <Button size="sm" variant="destructive" onClick={() => setDeleteChapterId(chapter.id)}>Delete</Button>
+                                  </div>
+                                  <AudioControls chapter={chapter} />
                                 </div>
                               </CardContent>
                             </Card>

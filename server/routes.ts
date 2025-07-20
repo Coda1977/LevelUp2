@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { getChatResponse, getOpenAIChatResponse, getChatResponseStream } from "./openai";
+import { generateAudio, generateHighQualityAudio, deleteAudioFile } from "./audio";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 
@@ -207,6 +208,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error reordering chapters:', error);
       res.status(500).json({ message: 'Failed to reorder chapters' });
+    }
+  });
+
+  // Audio generation routes
+  app.post('/api/chapters/:id/generate-audio', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { voice = "alloy", quality = "standard" } = req.body;
+      
+      const chapter = await storage.getChapterById(id);
+      if (!chapter) {
+        return res.status(404).json({ message: "Chapter not found" });
+      }
+
+      // Delete old audio file if exists
+      if (chapter.audioUrl) {
+        deleteAudioFile(chapter.audioUrl);
+      }
+
+      // Generate text for audio (combine title, description, and content)
+      const textContent = `${chapter.title}. ${chapter.description || ''}. ${chapter.content || ''}`;
+      
+      // Generate audio based on quality preference
+      const audioUrl = quality === "hd" 
+        ? await generateHighQualityAudio(textContent, id, voice)
+        : await generateAudio(textContent, id, voice);
+
+      // Update chapter with new audio URL
+      await storage.updateChapter(id, { audioUrl });
+
+      res.json({ audioUrl, message: "Audio generated successfully" });
+    } catch (error) {
+      console.error("Error generating audio:", error);
+      res.status(500).json({ message: "Failed to generate audio" });
+    }
+  });
+
+  app.delete('/api/chapters/:id/audio', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const chapter = await storage.getChapterById(id);
+      
+      if (!chapter) {
+        return res.status(404).json({ message: "Chapter not found" });
+      }
+
+      if (chapter.audioUrl) {
+        deleteAudioFile(chapter.audioUrl);
+        await storage.updateChapter(id, { audioUrl: null });
+      }
+
+      res.json({ message: "Audio deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting audio:", error);
+      res.status(500).json({ message: "Failed to delete audio" });
     }
   });
 
