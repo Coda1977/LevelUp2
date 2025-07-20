@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigation } from "@/components/Navigation";
 import { Suspense, lazy } from "react";
+import CategoryPage from "./pages/category";
 
 const Landing = lazy(() => import("@/pages/landing"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
@@ -44,6 +45,7 @@ function Router() {
           <Route path="/team" component={isAuthenticated ? Team : Landing} />
           <Route path="/admin" component={isAuthenticated ? Admin : Landing} />
           <Route path="/chapter/:slug" component={isAuthenticated ? Chapter : Landing} />
+          <Route path="/category/:slug" component={CategoryPage} />
           <Route component={NotFound} />
         </Switch>
       </Suspense>

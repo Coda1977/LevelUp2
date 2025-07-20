@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MobileNav } from "@/components/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Copy, Trash2 } from "lucide-react";
+import { Send, Copy, Trash2, Edit2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
@@ -32,6 +32,11 @@ export default function Chat() {
   const [sessions, setSessions] = useState(mockSessions); // Replace with API call
   const [selectedSessionId, setSelectedSessionId] = useState(mockSessions[0].id);
   const [chatNameCounter, setChatNameCounter] = useState(4);
+  const [isAITyping, setIsAITyping] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [renamingSessionId, setRenamingSessionId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -67,12 +72,15 @@ export default function Chat() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
+      setIsAITyping(true);
+      setChatError(null);
       const response = await apiRequest("POST", "/api/chat", { message, sessionId: selectedSessionId });
       return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/chat/history", selectedSessionId] });
       setInputMessage('');
+      setIsAITyping(false);
       
       // Auto-generate chat name from first message if current chat has default name
       const currentSession = sessions.find(s => s.id === selectedSessionId);
@@ -81,6 +89,8 @@ export default function Chat() {
       }
     },
     onError: (error) => {
+      setIsAITyping(false);
+      setChatError("AI is temporarily unavailable. Please try again.");
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -100,18 +110,59 @@ export default function Chat() {
     },
   });
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!inputMessage.trim() || sendMessageMutation.isPending) return;
-    
+    setIsAITyping(true);
+    setChatError(null);
+    setStreamingMessage('');
     // Immediately add user message to UI for responsive feel
-    const userMessage = { 
-      role: 'user' as const, 
-      content: inputMessage, 
-      timestamp: new Date().toISOString() 
-    };
-    
-    // Start the mutation
-    sendMessageMutation.mutate(inputMessage);
+    // (You may want to update local state for optimistic UI)
+    try {
+      const res = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            ...sessionMessages.map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: inputMessage }
+          ],
+        }),
+      });
+      if (!res.body) throw new Error('No response body');
+      const reader = res.body.getReader();
+      let aiMessage = '';
+      setInputMessage('');
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = new TextDecoder().decode(value);
+        for (const line of chunk.split('\n')) {
+          if (line.startsWith('data:')) {
+            const data = line.replace('data: ', '').trim();
+            if (data === '[DONE]') {
+              setIsAITyping(false);
+              setStreamingMessage(null);
+              queryClient.invalidateQueries({ queryKey: ["/api/chat/history", selectedSessionId] });
+              return;
+            }
+            try {
+              const { token } = JSON.parse(data);
+              if (token) {
+                aiMessage += token;
+                setStreamingMessage(aiMessage);
+              }
+            } catch {}
+          }
+        }
+      }
+      setIsAITyping(false);
+      setStreamingMessage(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/history", selectedSessionId] });
+    } catch (error) {
+      setIsAITyping(false);
+      setStreamingMessage(null);
+      setChatError("AI is temporarily unavailable. Please try again.");
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -135,21 +186,15 @@ export default function Chat() {
   ];
 
   // New chat handler
-  const handleNewChat = () => {
-    const newId = chatNameCounter.toString();
-    const newChatName = `New Chat ${chatNameCounter}`;
-    const newSession = { id: newId, name: newChatName, summary: '' };
-    
+  const handleNewChat = async () => {
+    // Create session in backend
+    const res = await fetch('/api/chat/session', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const newSession = await res.json(); // { id, name, summary }
     // Add new session to the beginning of the list
     setSessions(prev => [newSession, ...prev]);
-    
     // Switch to the new chat immediately
-    setSelectedSessionId(newId);
-    
-    // Increment counter for next chat
-    setChatNameCounter(prev => prev + 1);
-    
-    // In real code, also create session in backend
+    setSelectedSessionId(newSession.id);
+    // In real code, also create session in backend (now done)
   };
 
   // Delete chat handler
@@ -268,7 +313,39 @@ export default function Chat() {
               className={`group p-3 rounded-lg mb-2 cursor-pointer transition border relative ${selectedSessionId === session.id ? 'bg-[var(--accent-blue)] text-white border-[var(--accent-blue)]' : 'hover:bg-gray-100 border-transparent'}`}
               onClick={() => setSelectedSessionId(session.id)}
             >
-              <div className="font-semibold truncate pr-8">{session.name}</div>
+              {renamingSessionId === session.id ? (
+                <input
+                  className="font-semibold truncate pr-8 bg-white text-black border rounded px-2 py-1 w-40"
+                  value={renameValue}
+                  onChange={e => setRenameValue(e.target.value)}
+                  onBlur={() => {
+                    setSessions(prev => prev.map(s => s.id === session.id ? { ...s, name: renameValue } : s));
+                    setRenamingSessionId(null);
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      setSessions(prev => prev.map(s => s.id === session.id ? { ...s, name: renameValue } : s));
+                      setRenamingSessionId(null);
+                    }
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <div className="flex items-center">
+                  <div className="font-semibold truncate pr-2">{session.name}</div>
+                  <button
+                    className="ml-1 text-xs text-gray-400 hover:text-[var(--accent-yellow)]"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setRenamingSessionId(session.id);
+                      setRenameValue(session.name);
+                    }}
+                    title="Rename session"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
               {session.summary && <div className="text-xs opacity-70 truncate">{session.summary}</div>}
               <button
                 className={`absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${selectedSessionId === session.id ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:bg-red-100 hover:text-red-600'}`}
@@ -303,7 +380,7 @@ export default function Chat() {
         <div className="w-full max-w-2xl flex-1 flex flex-col bg-white/80 rounded-2xl shadow-xl overflow-hidden border border-gray-200">
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto px-4 py-8 space-y-6" style={{ minHeight: 400 }}>
-            {sessionMessages.length === 0 ? (
+            {sessionMessages.length === 0 && !streamingMessage ? (
               <div className="text-center py-16 max-w-2xl mx-auto">
                 <div className="w-20 h-20 bg-white border-4 border-[var(--text-primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-pulse">
                   <span className="text-2xl font-black">∞</span>
@@ -404,6 +481,42 @@ export default function Chat() {
                     </div>
                   </div>
                 ))}
+                {/* Streaming AI message */}
+                {streamingMessage && (
+                  <div className="flex gap-3 items-end animate-fade-in">
+                    <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center animate-pulse">
+                      <span className="text-white font-black">∞</span>
+                    </div>
+                    <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-md text-base leading-relaxed">
+                      <span className="whitespace-pre-wrap">{streamingMessage}</span>
+                    </div>
+                  </div>
+                )}
+                {/* Typing Indicator */}
+                {isAITyping && (
+                  <div className="flex gap-3 items-end animate-fade-in">
+                    <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center animate-pulse">
+                      <span className="text-white font-black">∞</span>
+                    </div>
+                    <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-md text-base leading-relaxed flex items-center gap-2">
+                      <span className="text-[var(--text-secondary)] font-medium">AI is typing</span>
+                      <span className="animate-bounce">.</span>
+                      <span className="animate-bounce delay-150">.</span>
+                      <span className="animate-bounce delay-300">.</span>
+                    </div>
+                  </div>
+                )}
+                {/* Error Message */}
+                {chatError && (
+                  <div className="flex gap-3 items-end animate-fade-in">
+                    <div className="w-10 h-10 bg-red-500 border-2 border-red-300 rounded-full flex items-center justify-center animate-pulse">
+                      <span className="text-white font-black">!</span>
+                    </div>
+                    <div className="bg-white border border-red-200 p-4 rounded-2xl shadow-md text-base leading-relaxed text-red-600">
+                      {chatError}
+                    </div>
+                  </div>
+                )}
                 {sendMessageMutation.isPending && (
                   <div className="flex gap-3 items-end animate-fade-in">
                     <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center">

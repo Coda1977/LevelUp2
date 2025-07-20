@@ -71,3 +71,27 @@ export async function getOpenAIChatResponse(systemPrompt: string, userMessage: s
     throw new Error('Failed to get AI response');
   }
 }
+
+export async function* getChatResponseStream(
+  messages: Array<{role: string, content: string}>,
+  systemPrompt?: string
+): AsyncGenerator<string, void, unknown> {
+  const formattedMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
+  if (systemPrompt) {
+    formattedMessages.push({ role: 'system', content: systemPrompt });
+  }
+  formattedMessages.push(...messages.map(msg => ({ role: msg.role as 'user' | 'assistant', content: msg.content })));
+
+  const response = await openai.chat.completions.create({
+    model: DEFAULT_MODEL_STR,
+    messages: formattedMessages,
+    max_tokens: 1024,
+    temperature: 0.7,
+    stream: true,
+  });
+
+  for await (const chunk of response) {
+    const content = chunk.choices?.[0]?.delta?.content;
+    if (content) yield content;
+  }
+}

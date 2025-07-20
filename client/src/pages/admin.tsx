@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, BookOpen, FolderPlus } from "lucide-react";
 import { TiptapEditor } from "@/components/ui/TiptapEditor";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AudioRecorder } from "@/components/ui/AudioRecorder";
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
 // Add types for Category and Chapter
 interface Category {
@@ -52,13 +53,38 @@ export default function Admin() {
   // Add content type state
   const [contentType, setContentType] = useState<'lesson' | 'book_summary'>('lesson');
 
+  // Auto-save draft to localStorage
+  useEffect(() => {
+    if (showChapterForm) {
+      const savedDraft = localStorage.getItem('chapterDraft');
+      if (savedDraft) {
+        setChapterData(JSON.parse(savedDraft));
+      }
+    }
+  }, [showChapterForm]);
+
+  useEffect(() => {
+    if (showChapterForm) {
+      localStorage.setItem('chapterDraft', JSON.stringify(chapterData));
+    }
+  }, [chapterData, showChapterForm]);
+
   // Fetch categories and chapters
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
-  const { data: chapters = [] } = useQuery<Chapter[]>({
-    queryKey: ["/api/chapters"],
+  // Pagination state for chapters
+  const [chapterPage, setChapterPage] = useState(1);
+  const chapterPageSize = 10;
+
+  // Fetch paginated chapters
+  const { data: chapters = [], isLoading: chaptersLoading } = useQuery<Chapter[]>({
+    queryKey: ["/api/chapters", chapterPage, chapterPageSize],
+    queryFn: async () => {
+      const res = await fetch(`/api/chapters?page=${chapterPage}&pageSize=${chapterPageSize}`);
+      return res.json();
+    },
   });
 
   // Category form state
@@ -208,6 +234,87 @@ export default function Admin() {
   const [deleteCategoryId, setDeleteCategoryId] = useState<number | null>(null);
   const [deleteChapterId, setDeleteChapterId] = useState<number | null>(null);
 
+  // Bulk selection state for chapters
+  const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
+
+  const handleSelectChapter = (id: number, checked: boolean) => {
+    setSelectedChapters((prev) =>
+      checked ? [...prev, id] : prev.filter((cid) => cid !== id)
+    );
+  };
+
+  const handleSelectAllChapters = (checked: boolean) => {
+    if (checked) {
+      setSelectedChapters(chapters.map((c) => c.id));
+    } else {
+      setSelectedChapters([]);
+    }
+  };
+
+  const handleBulkDeleteChapters = () => {
+    if (window.confirm('Delete all selected chapters? This cannot be undone.')) {
+      selectedChapters.forEach((id) => deleteChapterMutation.mutate(id));
+      setSelectedChapters([]);
+    }
+  };
+
+  // Handle drag end for chapters
+  const handleChapterDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const reordered = Array.from(chapters);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+    // Update order in state (for UI)
+    // Optionally, send new order to backend here
+    // setChapters(reordered); // If using local state
+    // Persist new order to backend
+    const order = reordered.map((chapter, idx) => ({ id: chapter.id, chapterNumber: idx + 1 }));
+    fetch('/api/chapters/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order }),
+    });
+  };
+
+  // Bulk selection state for categories
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+
+  const handleSelectCategory = (id: number, checked: boolean) => {
+    setSelectedCategories((prev) =>
+      checked ? [...prev, id] : prev.filter((cid) => cid !== id)
+    );
+  };
+
+  const handleSelectAllCategories = (checked: boolean) => {
+    if (checked) {
+      setSelectedCategories(categories.map((c) => c.id));
+    } else {
+      setSelectedCategories([]);
+    }
+  };
+
+  const handleBulkDeleteCategories = () => {
+    if (window.confirm('Delete all selected categories? This cannot be undone.')) {
+      selectedCategories.forEach((id) => deleteCategoryMutation.mutate(id));
+      setSelectedCategories([]);
+    }
+  };
+
+  // Handle drag end for categories
+  const handleCategoryDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const reordered = Array.from(categories);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+    // Persist new order to backend
+    const order = reordered.map((cat, idx) => ({ id: cat.id, sortOrder: idx + 1 }));
+    fetch('/api/categories/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order }),
+    });
+  };
+
   // Mutations for delete
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -345,123 +452,190 @@ export default function Admin() {
   return (
     <div className="max-w-6xl mx-auto px-3 md:px-5 py-6 md:py-8">
       <div className="mb-6 md:mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-4">
+        <h1 className="text-4xl md:text-5xl font-black text-[var(--text-primary)] mb-6 tracking-tight">
           Content Management
         </h1>
-        <p className="text-[var(--text-secondary)] text-base md:text-lg">
+        <p className="text-[var(--text-secondary)] text-lg md:text-xl">
           Add and manage learning content for Level Up
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
-        {/* Categories Section */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Categories</h2>
-            <Button
-              onClick={() => setShowCategoryForm(!showCategoryForm)}
-              className="bg-[var(--accent-yellow)] text-[var(--text-primary)] hover:bg-[var(--accent-yellow)]/80"
-            >
-              <FolderPlus className="w-4 h-4 mr-2" />
-              Add Category
-            </Button>
-          </div>
+      <div className="grid lg:grid-cols-2 gap-12 md:gap-16">
+        {/* Categories Section with Drag-and-Drop and Bulk Actions */}
+        <DragDropContext onDragEnd={handleCategoryDragEnd}>
+          <Droppable droppableId="category-list">
+            {(provided) => (
+              <div ref={provided.innerRef} {...provided.droppableProps}>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl md:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">Categories</h2>
+                  <Button
+                    onClick={() => setShowCategoryForm(!showCategoryForm)}
+                    className="bg-[var(--accent-yellow)] text-[var(--text-primary)] hover:bg-[var(--accent-yellow)]/80 text-lg font-semibold px-6 py-3 shadow-md"
+                  >
+                    <FolderPlus className="w-5 h-5 mr-2" />
+                    Add Category
+                  </Button>
+                </div>
 
-          {showCategoryForm && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Create New Category</CardTitle>
-                <CardDescription>
-                  Categories group related learning content together
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateCategory} className="space-y-4">
-                  <div>
-                    <Label htmlFor="categoryTitle">Title</Label>
-                    <Input
-                      id="categoryTitle"
-                      value={categoryData.title}
-                      onChange={(e) => setCategoryData({ ...categoryData, title: e.target.value })}
-                      placeholder="e.g., Leadership Foundations"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="categoryDescription">Description</Label>
-                    <TiptapEditor
-                      value={categoryData.description}
-                      onChange={(html) => setCategoryData({ ...categoryData, description: html })}
-                      placeholder="Brief description of what this category covers"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="sortOrder">Sort Order</Label>
-                    <Input
-                      id="sortOrder"
-                      type="number"
-                      value={categoryData.sortOrder}
-                      onChange={(e) => setCategoryData({ ...categoryData, sortOrder: parseInt(e.target.value) })}
-                      min="1"
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <Button 
-                      type="submit" 
-                      disabled={createCategoryMutation.isPending}
-                      className="bg-[var(--text-primary)] text-[var(--bg-primary)]"
-                    >
-                      {createCategoryMutation.isPending ? "Creating..." : "Create Category"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowCategoryForm(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
+                {showCategoryForm && (
+                  <Card className="mb-6">
+                    <CardHeader>
+                      <CardTitle>Create New Category</CardTitle>
+                      <CardDescription>
+                        Categories group related learning content together
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={handleCreateCategory} className="space-y-4">
+                        <div>
+                          <Label htmlFor="categoryTitle">Title</Label>
+                          <Input
+                            id="categoryTitle"
+                            value={categoryData.title}
+                            onChange={(e) => setCategoryData({ ...categoryData, title: e.target.value })}
+                            placeholder="e.g., Leadership Foundations"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="categoryDescription">Description</Label>
+                          <TiptapEditor
+                            value={categoryData.description}
+                            onChange={(html) => setCategoryData({ ...categoryData, description: html })}
+                            placeholder="Brief description of what this category covers"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="sortOrder">Sort Order</Label>
+                          <Input
+                            id="sortOrder"
+                            type="number"
+                            value={categoryData.sortOrder}
+                            onChange={(e) => setCategoryData({ ...categoryData, sortOrder: parseInt(e.target.value) })}
+                            min="1"
+                          />
+                        </div>
+                        <div className="flex gap-3">
+                          <Button 
+                            type="submit" 
+                            disabled={createCategoryMutation.isPending}
+                            className="bg-[var(--text-primary)] text-[var(--bg-primary)]"
+                          >
+                            {createCategoryMutation.isPending ? "Creating..." : "Create Category"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowCategoryForm(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                )}
 
-          <div className="space-y-3">
-            {categories.length === 0 ? (
-              <p className="text-[var(--text-secondary)] text-center py-8">
-                No categories yet. Create your first category to get started.
-              </p>
-            ) : (
-              categories.map((category: Category) => (
-                <Card key={category.id}>
-                  <CardContent className="p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="font-semibold text-[var(--text-primary)]">{category.title}</h3>
-                      <p className="text-sm text-[var(--text-secondary)] mt-1">{category.description}</p>
-                      <div className="text-xs text-[var(--text-secondary)] mt-2">Order: {category.sortOrder}</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handleEditCategory(category)}>Edit</Button>
-                      <Button size="sm" variant="destructive" onClick={() => setDeleteCategoryId(category.id)}>Delete</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                <div className="space-y-3">
+                  {categories.length === 0 ? (
+                    <p className="text-[var(--text-secondary)] text-center py-8">
+                      No categories yet. Create your first category to get started.
+                    </p>
+                  ) : (
+                    categories.map((category: Category, index: number) => (
+                      <Draggable key={category.id} draggableId={category.id.toString()} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`transition-shadow ${snapshot.isDragging ? 'shadow-2xl' : ''}`}
+                          >
+                            <Card>
+                              <CardContent className="p-6 md:p-8 flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedCategories.includes(category.id)}
+                                    onChange={(e) => handleSelectCategory(category.id, e.target.checked)}
+                                    className="w-5 h-5"
+                                  />
+                                  <div>
+                                    <h3 className="font-semibold text-[var(--text-primary)] text-lg md:text-xl mb-1">{category.title}</h3>
+                                    <div className="text-base md:text-lg text-[var(--text-secondary)] mt-1 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: category.description }} />
+                                    <div className="text-sm md:text-base text-[var(--text-secondary)] mt-2">Order: {category.sortOrder}</div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => handleEditCategory(category)}>Edit</Button>
+                                  <Button size="sm" variant="destructive" onClick={() => setDeleteCategoryId(category.id)}>Delete</Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))
+                  )}
+                  {provided.placeholder}
+                </div>
+              </div>
             )}
-          </div>
-        </div>
+          </Droppable>
+        </DragDropContext>
 
         {/* Chapters Section */}
         <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Chapters</h2>
+          <div className="border-t border-gray-200 mb-8 pt-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl md:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">Chapters</h2>
+              <Button
+                onClick={() => setShowChapterForm(!showChapterForm)}
+                className="bg-[var(--accent-yellow)] text-[var(--text-primary)] hover:bg-[var(--accent-yellow)]/80 text-lg font-semibold px-6 py-3 shadow-md"
+                disabled={categories.length === 0}
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Chapter
+              </Button>
+            </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center gap-4 mb-4">
             <Button
-              onClick={() => setShowChapterForm(!showChapterForm)}
-              className="bg-[var(--accent-yellow)] text-[var(--text-primary)] hover:bg-[var(--accent-yellow)]/80"
-              disabled={categories.length === 0}
+              type="button"
+              variant="outline"
+              disabled={chapterPage === 1}
+              onClick={() => setChapterPage((p) => Math.max(1, p - 1))}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Chapter
+              Previous
+            </Button>
+            <span>Page {chapterPage}</span>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={chapters.length < chapterPageSize}
+              onClick={() => setChapterPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+
+          {/* Bulk Actions Controls */}
+          <div className="flex items-center gap-4 mb-4">
+            <input
+              type="checkbox"
+              checked={selectedChapters.length === chapters.length && chapters.length > 0}
+              onChange={(e) => handleSelectAllChapters(e.target.checked)}
+              className="w-5 h-5 mr-2"
+            />
+            <span>Select All</span>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={selectedChapters.length === 0}
+              onClick={handleBulkDeleteChapters}
+            >
+              Delete Selected
             </Button>
           </div>
 
@@ -476,16 +650,58 @@ export default function Admin() {
             </Card>
           )}
 
-          {showChapterForm && categories.length > 0 && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>{editChapter ? 'Edit Chapter' : 'Create New Chapter'}</CardTitle>
-                <CardDescription>
-                  {editChapter ? 'Update the chapter details and content' : 'Add a new learning chapter with content and media'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateChapter} className="space-y-4">
+          {/* Full-screen Dialog for Chapter Form */}
+          <Dialog open={showChapterForm && categories.length > 0} onOpenChange={setShowChapterForm}>
+            <DialogContent className="fixed inset-0 w-full h-full max-w-none max-h-none p-0 bg-white flex flex-col z-50 overflow-y-auto">
+              <div className="flex items-center justify-between px-8 py-6 border-b">
+                <div>
+                  <DialogTitle className="text-2xl font-bold">
+                    {editChapter ? 'Edit Chapter' : 'Create New Chapter'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editChapter ? 'Update the chapter details and content' : 'Add a new learning chapter with content and media'}
+                  </DialogDescription>
+                </div>
+                <Button variant="ghost" onClick={() => setShowChapterForm(false)} className="text-2xl px-4 py-2">✕</Button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col items-center">
+                <div className="w-full max-w-3xl flex justify-end mb-4">
+                  <Button
+                    type="button"
+                    variant={previewMode ? "default" : "outline"}
+                    onClick={() => setPreviewMode(!previewMode)}
+                  >
+                    {previewMode ? "Edit" : "Preview"}
+                  </Button>
+                </div>
+                <form onSubmit={handleCreateChapter} className="w-full max-w-3xl space-y-6">
+                  {previewMode ? (
+                    <div className="bg-white rounded-2xl p-8 shadow-lg mb-8 mt-2">
+                      <div className="prose prose-lg max-w-none">
+                        <div dangerouslySetInnerHTML={{ __html: chapterData.content }} />
+                      </div>
+                      {chapterData.podcastUrl && (
+                        <div className="mt-8">
+                          <h3 className="text-xl font-bold mb-4">{chapterData.podcastHeader}</h3>
+                          {renderMediaEmbed(chapterData.podcastUrl)}
+                        </div>
+                      )}
+                      {chapterData.videoUrl && (
+                        <div className="mt-8">
+                          <h3 className="text-xl font-bold mb-4">{chapterData.videoHeader}</h3>
+                          {renderMediaEmbed(chapterData.videoUrl)}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Suspense fallback={<div className='p-8 text-center'>Loading editor...</div>}>
+                      <TiptapEditor
+                        value={chapterData.content}
+                        onChange={(html) => setChapterData({ ...chapterData, content: html })}
+                        placeholder="Main content of the chapter (rich formatting supported)"
+                      />
+                    </Suspense>
+                  )}
                   <div>
                     <Label htmlFor="chapterTitle">Title</Label>
                     <Input
@@ -621,42 +837,6 @@ export default function Admin() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="chapterContent">Content</Label>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-sm text-[var(--text-secondary)]">Edit Mode</span>
-                      <label className="inline-flex items-center cursor-pointer">
-                        <input type="checkbox" checked={previewMode} onChange={e => setPreviewMode(e.target.checked)} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[var(--accent-yellow)] rounded-full peer peer-checked:bg-[var(--accent-yellow)] transition-all"></div>
-                        <span className="ml-2 text-sm text-[var(--text-secondary)]">Preview</span>
-                      </label>
-                    </div>
-                    {previewMode ? (
-                      <div className="bg-white rounded-2xl p-8 shadow-lg mb-8 mt-2">
-                        <div className="prose prose-lg max-w-none">
-                          <div dangerouslySetInnerHTML={{ __html: chapterData.content }} />
-                        </div>
-                        {chapterData.podcastUrl && (
-                          <div className="mt-8">
-                            <h3 className="text-xl font-bold mb-4">{chapterData.podcastHeader}</h3>
-                            {renderMediaEmbed(chapterData.podcastUrl)}
-                          </div>
-                        )}
-                        {chapterData.videoUrl && (
-                          <div className="mt-8">
-                            <h3 className="text-xl font-bold mb-4">{chapterData.videoHeader}</h3>
-                            {renderMediaEmbed(chapterData.videoUrl)}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <TiptapEditor
-                        value={chapterData.content}
-                        onChange={(html) => setChapterData({ ...chapterData, content: html })}
-                        placeholder="Main content of the chapter (rich formatting supported)"
-                      />
-                    )}
-                  </div>
-                  <div>
                     <Label htmlFor="podcastUrl">Podcast URL (Spotify, optional)</Label>
                     <Input
                       id="podcastUrl"
@@ -733,36 +913,63 @@ export default function Admin() {
                     </Button>
                   </div>
                 </form>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </DialogContent>
+          </Dialog>
 
-          <div className="space-y-3">
-            {chapters.length === 0 ? (
-              <p className="text-[var(--text-secondary)] text-center py-8">
-                No chapters yet. Create your first chapter to get started.
-              </p>
-            ) : (
-              chapters.map((chapter: Chapter) => (
-                <Card key={chapter.id}>
-                  <CardContent className="p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="font-semibold text-[var(--text-primary)]">{chapter.title}</h3>
-                      <div className="text-sm text-[var(--text-secondary)] mt-1 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: chapter.description }} />
-                      <div className="flex justify-between items-center mt-2 text-xs text-[var(--text-secondary)]">
-                        <span>Chapter {chapter.chapterNumber}</span>
-                        <span>{chapter.estimatedMinutes} min</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handleEditChapter(chapter)}>Edit</Button>
-                      <Button size="sm" variant="destructive" onClick={() => setDeleteChapterId(chapter.id)}>Delete</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+          {/* Chapters List with Drag-and-Drop */}
+          <DragDropContext onDragEnd={handleChapterDragEnd}>
+            <Droppable droppableId="chapter-list">
+              {(provided) => (
+                <div className="space-y-3" ref={provided.innerRef} {...provided.droppableProps}>
+                  {chapters.length === 0 ? (
+                    <p className="text-[var(--text-secondary)] text-center py-8">
+                      No chapters yet. Create your first chapter to get started.
+                    </p>
+                  ) : (
+                    chapters.map((chapter: Chapter, index: number) => (
+                      <Draggable key={chapter.id} draggableId={chapter.id.toString()} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`transition-shadow ${snapshot.isDragging ? 'shadow-2xl' : ''}`}
+                          >
+                            <Card>
+                              <CardContent className="p-6 md:p-8 flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedChapters.includes(chapter.id)}
+                                    onChange={(e) => handleSelectChapter(chapter.id, e.target.checked)}
+                                    className="w-5 h-5"
+                                  />
+                                  <div>
+                                    <h3 className="font-semibold text-[var(--text-primary)] text-lg md:text-xl mb-1">{chapter.title}</h3>
+                                    <div className="text-base md:text-lg text-[var(--text-secondary)] mt-1 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: chapter.description }} />
+                                    <div className="flex justify-between items-center mt-2 text-sm md:text-base text-[var(--text-secondary)]">
+                                      <span>Chapter {chapter.chapterNumber}</span>
+                                      <span>{chapter.estimatedMinutes} min</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => handleEditChapter(chapter)}>Edit</Button>
+                                  <Button size="sm" variant="destructive" onClick={() => setDeleteChapterId(chapter.id)}>Delete</Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))
+                  )}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         </div>
       </div>
       {/* Delete Category Dialog */}

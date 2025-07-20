@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { getChatResponse, getOpenAIChatResponse } from "./openai";
+import { getChatResponse, getOpenAIChatResponse, getChatResponseStream } from "./openai";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 
@@ -49,6 +49,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating category:", error);
       res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  app.post('/api/categories/reorder', isAuthenticated, async (req, res) => {
+    try {
+      const { order } = req.body; // order: [{id, sortOrder}]
+      if (!Array.isArray(order)) return res.status(400).json({ message: 'Invalid order array' });
+      for (const { id, sortOrder } of order) {
+        await storage.updateCategory(id, { sortOrder });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error reordering categories:', error);
+      res.status(500).json({ message: 'Failed to reorder categories' });
     }
   });
 
@@ -182,6 +196,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/chapters/reorder', isAuthenticated, async (req, res) => {
+    try {
+      const { order } = req.body; // order: [{id, chapterNumber}]
+      if (!Array.isArray(order)) return res.status(400).json({ message: 'Invalid order array' });
+      for (const { id, chapterNumber } of order) {
+        await storage.updateChapter(id, { chapterNumber });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error reordering chapters:', error);
+      res.status(500).json({ message: 'Failed to reorder chapters' });
+    }
+  });
+
   // Progress routes
   app.get('/api/progress', isAuthenticated, async (req: any, res) => {
     try {
@@ -276,6 +304,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching chat history:", error);
       res.status(500).json({ message: "Failed to fetch chat history" });
+    }
+  });
+
+  app.post('/api/chat/session', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessionId = nanoid(12);
+      const name = req.body.name || 'New Chat';
+      const summary = req.body.summary || '';
+      const messages = [];
+      const newSession = await storage.createChatSession({
+        userId,
+        sessionId,
+        name,
+        summary,
+        messages,
+      });
+      res.json({ id: newSession.sessionId, name: newSession.name, summary: newSession.summary });
+    } catch (error) {
+      console.error('Error creating chat session:', error);
+      res.status(500).json({ message: 'Failed to create chat session' });
     }
   });
 
@@ -423,6 +472,24 @@ ${references}` : ''}`;
     } catch (error) {
       console.error("Error in chat:", error);
       res.status(500).json({ message: "Failed to process chat message" });
+    }
+  });
+
+  app.post('/api/chat/stream', isAuthenticated, async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders();
+      const { messages, systemPrompt } = req.body;
+      for await (const token of getChatResponseStream(messages, systemPrompt)) {
+        res.write(`data: ${JSON.stringify({ token })}\n\n`);
+      }
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } catch (error) {
+      res.write(`data: ${JSON.stringify({ error: 'Streaming failed' })}\n\n`);
+      res.end();
     }
   });
 

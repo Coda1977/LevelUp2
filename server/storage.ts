@@ -29,6 +29,7 @@ export interface IStorage {
   // Category operations
   getCategories(): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category>;
   
   // Chapter operations
   getChaptersByCategory(categoryId: number): Promise<Chapter[]>;
@@ -93,6 +94,18 @@ export class DatabaseStorage implements IStorage {
       .values(category)
       .returning();
     return newCategory;
+  }
+
+  async updateCategory(id: number, categoryData: Partial<InsertCategory>): Promise<Category> {
+    const [updatedCategory] = await db
+      .update(categories)
+      .set({
+        ...categoryData,
+        updatedAt: new Date(),
+      })
+      .where(eq(categories.id, id))
+      .returning();
+    return updatedCategory;
   }
 
   async getChaptersByCategory(categoryId: number): Promise<Chapter[]> {

@@ -60,31 +60,20 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section ref={featuresRef} className={`py-20 md:py-28 bg-gradient-to-b from-[#F5F5F0] to-white transition-opacity duration-700 ${featuresVisible ? 'animate-fade-in opacity-100' : 'opacity-0'}`}>
-        <div className="max-w-3xl mx-auto px-3 md:px-5 flex flex-col items-center text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-2 text-black relative inline-block">
-            No More <span className="italic">"What Was That Tool Again?"</span>
-            <span className="block h-1 w-2/3 mx-auto mt-2 bg-gradient-to-r from-blue-500 to-blue-300 rounded-full"></span>
-          </h2>
-          <p className="text-lg text-gray-600 mb-10 max-w-xl">
-            You've done the program. Now it's time to use it.
-          </p>
-
-          <div className="relative w-full max-w-4xl">
-            <div className="flex bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="bg-[#FFD700] w-2 md:w-3 flex-shrink-0"></div>
-              <div className="p-8 md:p-12 flex-1 text-left">
-                <div className="font-bold text-2xl md:text-3xl text-black mb-6">
-                  Level Up helps you lead on purpose.
-                </div>
-                <div className="text-gray-700 text-lg md:text-xl leading-relaxed">
-                  Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Features Section (Midsection) */}
+      <section className="py-20 md:py-28 flex flex-col items-center text-center">
+        <h1 className="font-bold text-[2.5rem] md:text-5xl mb-6 text-[#18181B]">
+          No More <span className="italic">"What Was That Tool Again?"</span>
+        </h1>
+        <h2 className="font-bold text-2xl md:text-3xl mb-4 text-[#18181B]">
+          You've done the program. Now it's time to use it.
+        </h2>
+        <h3 className="font-bold text-xl md:text-2xl mb-3" style={{ color: '#2563eb' }}>
+          Level Up helps you lead on purpose.
+        </h3>
+        <p className="font-normal text-base md:text-lg text-[#18181B] max-w-2xl mx-auto mt-2">
+          Not just get through the day, but grow your team, coach through the hard stuff, and build habits that make you proud of how you manage—not just what you deliver.
+        </p>
       </section>
 
       {/* Simple by Design Section */}
