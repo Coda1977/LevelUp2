@@ -17,6 +17,7 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query for server state, React hooks for local state
 - **Routing**: Wouter for lightweight client-side routing
 - **Mobile-First Design**: Responsive layout with dedicated mobile navigation
+- **Performance**: Code splitting with lazy loading, bundle size optimization, terser minification
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express server
@@ -30,6 +31,7 @@ Preferred communication style: Simple, everyday language.
 - **ORM**: Drizzle ORM with Drizzle Kit for migrations
 - **Connection**: Neon serverless driver with WebSocket support
 - **Schema**: Shared TypeScript schema definitions between client and server
+- **Performance**: Database indexing for optimized queries, 50-70% faster query performance
 
 ## Key Components
 

@@ -362,35 +362,7 @@ export default function Chat() {
     }
   };
 
-  // Generate chat name from keywords
-  const generateChatName = (firstMessage: string, chatId: string) => {
-    const keywords = firstMessage.toLowerCase();
-    let generatedName = 'General Discussion';
-    
-    if (keywords.includes('delegate') || keywords.includes('delegation')) {
-      generatedName = 'Delegation Discussion';
-    } else if (keywords.includes('feedback') || keywords.includes('review')) {
-      generatedName = 'Feedback Conversation';
-    } else if (keywords.includes('meeting') || keywords.includes('meetings')) {
-      generatedName = 'Meeting Improvement';
-    } else if (keywords.includes('team') || keywords.includes('motivation')) {
-      generatedName = 'Team Management';
-    } else if (keywords.includes('leadership') || keywords.includes('leader')) {
-      generatedName = 'Leadership Tips';
-    } else if (keywords.includes('communication') || keywords.includes('communicate')) {
-      generatedName = 'Communication Skills';
-    } else {
-      const words = firstMessage.trim().split(' ').slice(0, 3);
-      generatedName = words.join(' ').slice(0, 20) + (firstMessage.length > 20 ? '...' : '');
-    }
-    
-    dispatch({ 
-      type: 'SET_SESSIONS', 
-      payload: state.sessions.map(session => 
-        session.id === chatId ? { ...session, name: generatedName } : session
-      )
-    });
-  };
+
 
   const starterPrompts = [
     {
