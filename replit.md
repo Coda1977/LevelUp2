@@ -62,6 +62,7 @@ Preferred communication style: Simple, everyday language.
 - **Quality Settings**: Standard (faster) and HD (higher quality)
 - **Storage**: Audio files stored locally in `/public/audio/`, database stores only file paths
 - **Features**: Generate, regenerate, delete, and download audio for any chapter content
+- **Playback Controls**: Speed adjustment (0.5× to 2×), volume control, seek, play/pause
 
 ### Advanced Analytics Dashboard
 - **Metrics**: Overall progress, user activity, engagement rates
