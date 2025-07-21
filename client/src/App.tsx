@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigation } from "@/components/Navigation";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Suspense, lazy } from "react";
 import CategoryPage from "./pages/category";
 
@@ -55,12 +56,29 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary fallback={
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center p-8">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Application Error</h1>
+          <p className="text-[var(--text-secondary)] mb-4">
+            The application encountered an unexpected error. Please refresh the page or contact support if the problem persists.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-[var(--accent-blue)] text-white px-6 py-2 rounded-lg hover:bg-[var(--accent-yellow)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    }>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

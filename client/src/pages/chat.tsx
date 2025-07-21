@@ -101,20 +101,41 @@ export default function Chat() {
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       fetch('/api/chat/sessions')
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          return res.json();
+        })
         .then(data => {
           dispatch({ type: 'SET_SESSIONS', payload: data });
           if (data.length > 0 && !data.find((s: any) => s.id === state.selectedSessionId)) {
             dispatch({ type: 'SELECT_SESSION', payload: data[0].id });
           }
+        })
+        .catch(error => {
+          console.error('Failed to load chat sessions:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load chat sessions. Please refresh the page.",
+            variant: "destructive",
+          });
         });
     }
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, toast]);
 
   const { data: messages = [] } = useQuery<Message[]>({
     queryKey: ["/api/chat/history", state.selectedSessionId],
-    queryFn: () => fetch(`/api/chat/history/${state.selectedSessionId}`).then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch(`/api/chat/history/${state.selectedSessionId}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: Failed to load chat history`);
+      }
+      return res.json();
+    },
     enabled: isAuthenticated && !!state.selectedSessionId,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const sessionMessages = messages;
@@ -145,12 +166,15 @@ export default function Chat() {
         const { name } = await res.json();
         // Update sessions list with the new name
         const sessionRes = await fetch('/api/chat/sessions');
-        const sessionList = await sessionRes.json();
-        dispatch({ type: 'SET_SESSIONS', payload: sessionList });
+        if (sessionRes.ok) {
+          const sessionList = await sessionRes.json();
+          dispatch({ type: 'SET_SESSIONS', payload: sessionList });
+        }
       }
     } catch (error) {
       console.error('Failed to generate session name:', error);
       // Don't show error to user since this is a nice-to-have feature
+      // Silently fail to avoid disrupting the chat experience
     }
   };
 
@@ -281,17 +305,27 @@ export default function Chat() {
           summary: ''
         })
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: Failed to create session`);
+      }
+      
       const newSession = await res.json();
       
       const sessionRes = await fetch('/api/chat/sessions');
+      if (!sessionRes.ok) {
+        throw new Error(`HTTP ${sessionRes.status}: Failed to load sessions`);
+      }
+      
       const sessionList = await sessionRes.json();
       dispatch({ type: 'SET_SESSIONS', payload: sessionList });
       dispatch({ type: 'SELECT_SESSION', payload: newSession.id });
       dispatch({ type: 'INCREMENT_COUNTER' });
     } catch (error) {
+      console.error('Failed to create new chat session:', error);
       toast({
         title: "Error",
-        description: "Failed to create new chat session",
+        description: "Failed to create new chat session. Please try again.",
         variant: "destructive",
       });
     }

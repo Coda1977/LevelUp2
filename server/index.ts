@@ -42,12 +42,41 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  // Enhanced error handling middleware
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    console.error('Server error:', {
+      error: err.message,
+      stack: err.stack,
+      url: req.url,
+      method: req.method,
+      timestamp: new Date().toISOString()
+    });
 
-    res.status(status).json({ message });
-    throw err;
+    const status = err.status || err.statusCode || 500;
+    const message = process.env.NODE_ENV === 'production' 
+      ? 'Internal Server Error' 
+      : err.message || "Internal Server Error";
+
+    // Only send response if not already sent
+    if (!res.headersSent) {
+      res.status(status).json({ message });
+    }
+    
+    // Don't re-throw the error - let the process continue
+  });
+
+  // Handle uncaught exceptions and unhandled promise rejections
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    // In production, you might want to gracefully shutdown
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Log but don't crash the process for unhandled rejections
   });
 
   // importantly only setup vite in development and after

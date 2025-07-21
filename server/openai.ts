@@ -76,22 +76,32 @@ export async function* getChatResponseStream(
   messages: Array<{role: string, content: string}>,
   systemPrompt?: string
 ): AsyncGenerator<string, void, unknown> {
-  const formattedMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
-  if (systemPrompt) {
-    formattedMessages.push({ role: 'system', content: systemPrompt });
-  }
-  formattedMessages.push(...messages.map(msg => ({ role: msg.role as 'user' | 'assistant', content: msg.content })));
+  try {
+    const formattedMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
+    if (systemPrompt) {
+      formattedMessages.push({ role: 'system', content: systemPrompt });
+    }
+    formattedMessages.push(...messages.map(msg => ({ role: msg.role as 'user' | 'assistant', content: msg.content })));
 
-  const response = await openai.chat.completions.create({
-    model: DEFAULT_MODEL_STR,
-    messages: formattedMessages,
-    max_tokens: 1024,
-    temperature: 0.7,
-    stream: true,
-  });
+    const response = await openai.chat.completions.create({
+      model: DEFAULT_MODEL_STR,
+      messages: formattedMessages,
+      max_tokens: 1024,
+      temperature: 0.7,
+      stream: true,
+    });
 
-  for await (const chunk of response) {
-    const content = chunk.choices?.[0]?.delta?.content;
-    if (content) yield content;
+    try {
+      for await (const chunk of response) {
+        const content = chunk.choices?.[0]?.delta?.content;
+        if (content) yield content;
+      }
+    } catch (streamError) {
+      console.error('OpenAI streaming error:', streamError);
+      yield 'Sorry, there was an error processing your request. Please try again.';
+    }
+  } catch (error) {
+    console.error('OpenAI API error in stream:', error);
+    yield 'Sorry, I am temporarily unavailable. Please try again later.';
   }
 }
