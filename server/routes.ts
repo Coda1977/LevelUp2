@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { getChatResponse, getOpenAIChatResponse, getChatResponseStream } from "./openai";
 import { generateAudio, generateHighQualityAudio, deleteAudioFile } from "./audio";
+import { QueryOptimizer } from "./query-optimizations";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 
@@ -782,6 +783,73 @@ ${references}`;
     } catch (error) {
       console.error("Error removing team member:", error);
       res.status(500).json({ message: "Failed to remove member" });
+    }
+  });
+
+  // Performance monitoring routes (admin only)
+  app.get('/api/admin/performance/metrics', isAuthenticated, async (req: any, res) => {
+    try {
+      const metrics = QueryOptimizer.getMetrics();
+      const slowQueries = QueryOptimizer.getSlowQueries();
+      
+      res.json({
+        totalQueries: metrics.length,
+        averageExecutionTime: metrics.reduce((sum, m) => sum + m.executionTime, 0) / metrics.length || 0,
+        slowQueries: slowQueries.length,
+        slowQueriesDetails: slowQueries.slice(-10), // Last 10 slow queries
+        recentMetrics: metrics.slice(-20) // Last 20 queries
+      });
+    } catch (error) {
+      console.error("Error fetching performance metrics:", error);
+      res.status(500).json({ message: "Failed to fetch performance metrics" });
+    }
+  });
+
+  app.get('/api/admin/performance/database', isAuthenticated, async (req: any, res) => {
+    try {
+      const [tableStats, unusedIndexes] = await Promise.all([
+        QueryOptimizer.getTableStats(),
+        QueryOptimizer.getUnusedIndexes()
+      ]);
+      
+      res.json({
+        tableStats,
+        unusedIndexes,
+        recommendations: {
+          largestTables: tableStats.slice(0, 5),
+          potentialOptimizations: unusedIndexes.length > 0 
+            ? ["Consider removing unused indexes to improve write performance"] 
+            : ["Database indexes appear to be well optimized"]
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching database performance:", error);
+      res.status(500).json({ message: "Failed to fetch database performance data" });
+    }
+  });
+
+  app.post('/api/admin/performance/analyze', isAuthenticated, async (req: any, res) => {
+    try {
+      const { query } = req.body;
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: "SQL query is required" });
+      }
+
+      const explanation = await QueryOptimizer.explainQuery(query);
+      res.json({ explanation });
+    } catch (error) {
+      console.error("Error analyzing query:", error);
+      res.status(500).json({ message: "Failed to analyze query" });
+    }
+  });
+
+  app.delete('/api/admin/performance/metrics', isAuthenticated, async (req: any, res) => {
+    try {
+      QueryOptimizer.clearMetrics();
+      res.json({ message: "Performance metrics cleared successfully" });
+    } catch (error) {
+      console.error("Error clearing metrics:", error);
+      res.status(500).json({ message: "Failed to clear metrics" });
     }
   });
 

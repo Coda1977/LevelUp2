@@ -4,16 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, BookOpen, FolderPlus, TrendingUp, Users, Target, Clock } from "lucide-react";
-import { TiptapEditor } from "@/components/ui/TiptapEditor";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { AudioRecorder } from "@/components/ui/AudioRecorder";
-import { AudioControls } from "@/components/AudioControls";
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { Plus, BookOpen, FolderPlus, TrendingUp } from "lucide-react";
+
+// Lazy load heavy components for better performance
+const ChapterEditor = lazy(() => import("@/components/admin/ChapterEditor").then(module => ({default: module.ChapterEditor})));
+const ContentAnalytics = lazy(() => import("@/components/admin/ContentAnalytics").then(module => ({default: module.ContentAnalytics})));
+const BulkOperations = lazy(() => import("@/components/admin/BulkOperations").then(module => ({default: module.BulkOperations})));
 
 // Add types for Category and Chapter
 interface Category {

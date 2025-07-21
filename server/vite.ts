@@ -76,10 +76,55 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Enhanced static file serving with caching
+  app.use(express.static(distPath, {
+    maxAge: '1y', // Default to 1 year for hashed assets
+    etag: true,
+    lastModified: true,
+    immutable: true,
+    setHeaders: (res, filePath) => {
+      const ext = path.extname(filePath).toLowerCase();
+      
+      // Immutable assets with hashes get longer cache
+      if (filePath.includes('assets/') || filePath.match(/-[a-f0-9]{8,}\./)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+      }
+      // JS and CSS files (may have hashes)
+      else if (['.js', '.css', '.mjs'].includes(ext)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+      }
+      // Images and media
+      else if (['.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.ico', '.mp3', '.mp4', '.webm'].includes(ext)) {
+        res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 days
+      }
+      // Fonts
+      else if (['.woff', '.woff2', '.ttf', '.eot'].includes(ext)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+      }
+      // HTML files should not be cached aggressively
+      else if (ext === '.html') {
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+      }
+      // Default for other files
+      else {
+        res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day
+      }
+      
+      // Security headers for production
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-Frame-Options', 'DENY');
+      res.setHeader('X-XSS-Protection', '1; mode=block');
+      
+      // Enable compression for text-based files
+      if (['.html', '.css', '.js', '.json', '.xml', '.svg', '.mjs'].includes(ext)) {
+        res.setHeader('Vary', 'Accept-Encoding');
+      }
+    }
+  }));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }

@@ -33,7 +33,10 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  createdAtIdx: index("users_created_at_idx").on(table.createdAt),
+  emailIdx: index("users_email_idx").on(table.email), // For user lookups
+}));
 
 // Categories table
 export const categories = pgTable("categories", {
@@ -44,7 +47,10 @@ export const categories = pgTable("categories", {
   iconType: varchar("icon_type"),
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  sortOrderIdx: index("categories_sort_order_idx").on(table.sortOrder),
+  createdAtIdx: index("categories_created_at_idx").on(table.createdAt),
+}));
 
 // Chapters table
 export const chapters = pgTable("chapters", {
@@ -67,7 +73,13 @@ export const chapters = pgTable("chapters", {
   audioUrl: varchar("audio_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  categoryIdIdx: index("chapters_category_id_idx").on(table.categoryId),
+  categoryChapterNumIdx: index("chapters_category_chapter_num_idx").on(table.categoryId, table.chapterNumber),
+  contentTypeIdx: index("chapters_content_type_idx").on(table.contentType),
+  createdAtIdx: index("chapters_created_at_idx").on(table.createdAt),
+  updatedAtIdx: index("chapters_updated_at_idx").on(table.updatedAt),
+}));
 
 // User progress table
 export const userProgress = pgTable("user_progress", {
@@ -77,7 +89,14 @@ export const userProgress = pgTable("user_progress", {
   completed: boolean("completed").default(false),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("user_progress_user_id_idx").on(table.userId),
+  chapterIdIdx: index("user_progress_chapter_id_idx").on(table.chapterId),
+  userChapterIdx: index("user_progress_user_chapter_idx").on(table.userId, table.chapterId), // Unique queries
+  completedIdx: index("user_progress_completed_idx").on(table.completed),
+  completedAtIdx: index("user_progress_completed_at_idx").on(table.completedAt),
+  userCompletedIdx: index("user_progress_user_completed_idx").on(table.userId, table.completed), // Analytics queries
+}));
 
 // Shared chapters table for sharing functionality
 export const sharedChapters = pgTable("shared_chapters", {
@@ -87,7 +106,11 @@ export const sharedChapters = pgTable("shared_chapters", {
   sharedBy: varchar("shared_by").references(() => users.id),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  expiresAtIdx: index("shared_chapters_expires_at_idx").on(table.expiresAt), // Cleanup expired shares
+  sharedByIdx: index("shared_chapters_shared_by_idx").on(table.sharedBy),
+  chapterIdIdx: index("shared_chapters_chapter_id_idx").on(table.chapterId),
+}));
 
 // Chat sessions table
 export const chatSessions = pgTable("chat_sessions", {

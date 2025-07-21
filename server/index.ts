@@ -6,8 +6,49 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve audio files statically
-app.use('/audio', express.static('public/audio'));
+// Serve static assets with optimized caching headers
+const staticAssetOptions = {
+  maxAge: '1y', // 1 year for static assets with hashes
+  etag: true,
+  lastModified: true,
+  setHeaders: (res: Response, path: string) => {
+    // Different cache strategies for different asset types
+    if (path.match(/\.(js|css|woff|woff2|ttf|eot)$/)) {
+      // Long cache for JS, CSS, fonts (usually have hashes)
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+    } else if (path.match(/\.(jpg|jpeg|png|gif|svg|webp|ico)$/)) {
+      // Medium cache for images
+      res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 days
+    } else if (path.match(/\.(mp3|wav|ogg|mp4|webm)$/)) {
+      // Medium cache for media files
+      res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 days
+    } else {
+      // Short cache for other files
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day
+    }
+    
+    // Add compression hint
+    res.setHeader('Vary', 'Accept-Encoding');
+  }
+};
+
+// Serve audio files with caching
+app.use('/audio', express.static('public/audio', staticAssetOptions));
+
+// Add compression middleware for better performance
+import compression from 'compression';
+app.use(compression({
+  filter: (req, res) => {
+    // Don't compress responses with this request header
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Fallback to standard filter function
+    return compression.filter(req, res);
+  },
+  level: 6, // Balance between compression ratio and CPU usage
+  threshold: 1024 // Only compress responses larger than 1KB
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
