@@ -127,6 +127,33 @@ export default function Chat() {
     scrollToBottom();
   }, [messages]);
 
+  // Generate intelligent chat name based on conversation
+  const generateChatName = async (currentUserMessage: string) => {
+    try {
+      const messagesForNaming = [
+        ...sessionMessages,
+        { role: 'user', content: currentUserMessage, timestamp: new Date().toISOString() }
+      ];
+      
+      const res = await fetch(`/api/chat/session/${state.selectedSessionId}/generate-name`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: messagesForNaming })
+      });
+      
+      if (res.ok) {
+        const { name } = await res.json();
+        // Update sessions list with the new name
+        const sessionRes = await fetch('/api/chat/sessions');
+        const sessionList = await sessionRes.json();
+        dispatch({ type: 'SET_SESSIONS', payload: sessionList });
+      }
+    } catch (error) {
+      console.error('Failed to generate session name:', error);
+      // Don't show error to user since this is a nice-to-have feature
+    }
+  };
+
   // Simplified sendMessage function
   const sendMessage = async () => {
     if (!state.inputMessage.trim() || state.isAITyping) return;
@@ -169,10 +196,10 @@ export default function Chat() {
               dispatch({ type: 'SET_STREAMING', payload: null });
               queryClient.invalidateQueries({ queryKey: ["/api/chat/history", state.selectedSessionId] });
               
-              // Auto-generate chat name from first message
+              // Auto-generate chat name after first exchange
               const currentSession = state.sessions.find(s => s.id === state.selectedSessionId);
-              if (currentSession && currentSession.name.startsWith('New Chat ')) {
-                generateChatName(currentMessage, currentSession.id);
+              if (currentSession && currentSession.name.startsWith('New Chat ') && sessionMessages.length >= 1) {
+                generateChatName(currentMessage);
               }
               return;
             }

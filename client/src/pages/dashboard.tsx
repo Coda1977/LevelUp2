@@ -7,9 +7,10 @@ import { MobileNav } from "@/components/MobileNav";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { Search, BookOpen, MessageSquare, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -78,18 +79,69 @@ export default function Dashboard() {
     })
     .slice(0, 2);
 
+  const completedThisWeek = progress.filter((p: any) => {
+    const completedDate = new Date(p.completedAt || p.createdAt);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return p.completed && completedDate > weekAgo;
+  }).length;
+
+  const getPersonalizedGreeting = () => {
+    const hour = new Date().getHours();
+    const firstName = user?.firstName || user?.name?.split(' ')[0] || 'there';
+    
+    if (hour < 12) {
+      return `Good morning, ${firstName}!`;
+    } else if (hour < 17) {
+      return `Good afternoon, ${firstName}!`;
+    } else {
+      return `Good evening, ${firstName}!`;
+    }
+  };
+
+  const getActivityMessage = () => {
+    if (completedThisWeek > 0) {
+      return `You've completed ${completedThisWeek} chapter${completedThisWeek > 1 ? 's' : ''} this week!`;
+    } else if (recentChapters.length > 0) {
+      return "Ready to continue your learning journey?";
+    } else if (completedChapters === totalChapters) {
+      return "Congratulations! You've completed all available content.";
+    } else {
+      return "Ready to start building your management skills?";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] pb-20 md:pb-0">
       {/* Welcome Section */}
-      <section className="py-16 md:py-20 px-3 md:px-5">
+      <section className="py-16 md:py-20 px-5 md:px-10">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-8 md:gap-12 items-start">
             <div className="flex-1">
-              <p className="text-lg md:text-xl text-[var(--text-secondary)] mb-2">Welcome back!</p>
-              <h1 className="hero-headline mb-6 text-3xl md:text-5xl">Keep Building Your Management Skills</h1>
-              <p className="body-text max-w-md">
-                Continue your journey with bite-sized lessons that fit your schedule.
+              <p className="text-lg md:text-xl text-[var(--text-secondary)] mb-2">{getPersonalizedGreeting()}</p>
+              <h1 className="text-[clamp(32px,5vw,48px)] font-black tracking-[-1px] leading-[1.1] mb-6 text-[var(--text-primary)]">Keep Building Your Management Skills</h1>
+              <p className="text-lg text-[var(--text-secondary)] max-w-md mb-8">
+                {getActivityMessage()}
               </p>
+              
+              {/* Quick Actions */}
+              <div className="flex flex-wrap gap-3">
+                <Button 
+                  onClick={() => setLocation('/learn')}
+                  className="bg-[var(--accent-blue)] text-white px-6 py-3 rounded-full font-semibold hover:-translate-y-1 hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {recentChapters.length > 0 ? 'Continue Learning' : 'Start Learning'}
+                </Button>
+                <Button 
+                  onClick={() => setLocation('/chat')}
+                  variant="outline"
+                  className="px-6 py-3 rounded-full font-semibold border-2 border-[var(--accent-blue)] text-[var(--accent-blue)] hover:bg-[var(--accent-blue)] hover:text-white transition-all duration-300 flex items-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Ask AI Coach
+                </Button>
+              </div>
             </div>
             <div className="flex-1 max-w-md bg-white p-6 md:p-8 rounded-2xl shadow-lg">
               <h3 className="text-lg md:text-xl font-bold mb-3">Your Progress</h3>
@@ -107,7 +159,7 @@ export default function Dashboard() {
 
       {/* Continue Learning */}
       {recentChapters.length > 0 && (
-        <section className="py-12 md:py-16 px-3 md:px-5">
+        <section className="py-12 md:py-16 px-5 md:px-10">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8 md:mb-12">
               <h2 className="section-header mb-4">Continue Your Journey</h2>
@@ -147,7 +199,7 @@ export default function Dashboard() {
       )}
 
       {/* Categories Overview */}
-      <section className="py-12 md:py-16 px-3 md:px-5">
+      <section className="py-12 md:py-16 px-5 md:px-10">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
             <h2 className="section-header mb-4">Explore All Topics</h2>
@@ -171,12 +223,14 @@ export default function Dashboard() {
                 </div>
                 
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                     {Array.from({ length: category.total }, (_, i) => (
                       <div
                         key={i}
-                        className={`w-3 h-3 rounded-full ${
-                          i < category.progress ? 'bg-[var(--accent-yellow)]' : 'bg-gray-300'
+                        className={`w-4 h-4 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
+                          i < category.progress 
+                            ? 'bg-[var(--accent-yellow)] ring-2 ring-[var(--accent-yellow)] ring-opacity-30' 
+                            : 'bg-gray-300'
                         }`}
                       />
                     ))}

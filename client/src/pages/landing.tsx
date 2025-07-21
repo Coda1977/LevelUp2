@@ -125,24 +125,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section ref={ctaRef} className={`py-20 md:py-32 px-5 md:px-10 bg-[var(--accent-blue)] transition-opacity duration-700 ${ctaVisible ? 'animate-fade-in opacity-100' : 'opacity-0'}`}>
-        <div className="max-w-6xl mx-auto text-center relative">
-          {/* Geometric accent shapes */}
-          <div className="absolute top-10 left-10 w-16 h-16 bg-[var(--accent-yellow)] opacity-20 transform rotate-12 rounded-lg"></div>
-          <div className="absolute bottom-10 right-10 w-12 h-12 bg-[var(--white)] opacity-20 rounded-full"></div>
-          
-          <h2 className="text-[clamp(32px,5vw,48px)] font-bold mb-8 text-[var(--white)] leading-tight">
-            Action Does Not Predict Happiness, But There Is No<br />Happiness Without Action
-          </h2>
-          <Button
-            onClick={() => window.location.href = "/api/login"}
-            className="bg-[var(--accent-yellow)] text-[var(--text-primary)] px-10 py-4 rounded-full font-semibold text-lg hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
-          >
-            Begin Your Journey
-          </Button>
-        </div>
-      </section>
       {/* Sticky CTA for mobile */}
       <div className="fixed bottom-4 left-4 right-4 flex justify-center z-50 lg:hidden">
         <button

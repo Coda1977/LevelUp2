@@ -52,10 +52,12 @@ export interface IStorage {
   // Chat operations
   createChatSession(session: InsertChatSession): Promise<ChatSession>;
   updateChatSession(userId: string, messages: any[]): Promise<ChatSession>;
+  updateChatSessionName(userId: string, sessionId: string, name: string): Promise<void>;
   getUserChatSession(userId: string): Promise<ChatSession | undefined>;
   
   // Analytics operations
   getAnalytics(): Promise<any>;
+  getContentAnalytics(): Promise<any>;
   
   // Team management operations
   getTeamMembers(): Promise<any[]>;
@@ -269,6 +271,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateChatSessionName(userId: string, sessionId: string, name: string): Promise<void> {
+    await db
+      .update(chatSessions)
+      .set({
+        name,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(chatSessions.userId, userId), eq(chatSessions.sessionId, sessionId)));
+  }
+
   async getUserChatSession(userId: string, sessionId: string): Promise<ChatSession | undefined> {
     const [session] = await db
       .select()
@@ -339,6 +351,103 @@ export class DatabaseStorage implements IStorage {
       averageProgress: 0,
       totalChaptersCompleted: 0
     };
+  }
+
+  async getContentAnalytics(): Promise<any> {
+    try {
+      // Get chapter completion statistics
+      const chapterStats = await db
+        .select({
+          chapterId: userProgress.chapterId,
+          title: chapters.title,
+          categoryTitle: categories.title,
+          completions: sql<number>`count(case when ${userProgress.completed} then 1 end)`,
+          started: sql<number>`count(*)`,
+          completionRate: sql<number>`round(count(case when ${userProgress.completed} then 1 end) * 100.0 / count(*), 1)`,
+          avgCompletionTime: sql<number>`avg(case when ${userProgress.completed} then extract(epoch from (${userProgress.completedAt} - ${userProgress.createdAt}))/60 end)`,
+          lastCompleted: sql<Date>`max(${userProgress.completedAt})`
+        })
+        .from(userProgress)
+        .innerJoin(chapters, eq(userProgress.chapterId, chapters.id))
+        .innerJoin(categories, eq(chapters.categoryId, categories.id))
+        .groupBy(userProgress.chapterId, chapters.title, categories.title)
+        .orderBy(sql`count(case when ${userProgress.completed} then 1 end) desc`);
+
+      // Get category engagement stats
+      const categoryStats = await db
+        .select({
+          categoryId: categories.id,
+          categoryTitle: categories.title,
+          totalChapters: sql<number>`count(distinct ${chapters.id})`,
+          totalCompletions: sql<number>`count(case when ${userProgress.completed} then 1 end)`,
+          totalUsers: sql<number>`count(distinct ${userProgress.userId})`,
+          avgCompletionRate: sql<number>`round(count(case when ${userProgress.completed} then 1 end) * 100.0 / count(*), 1)`
+        })
+        .from(categories)
+        .leftJoin(chapters, eq(categories.id, chapters.categoryId))
+        .leftJoin(userProgress, eq(chapters.id, userProgress.chapterId))
+        .groupBy(categories.id, categories.title)
+        .orderBy(sql`count(case when ${userProgress.completed} then 1 end) desc`);
+
+      // Get trending chapters (completed in last 7 days)
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      
+      const trendingChapters = await db
+        .select({
+          chapterId: chapters.id,
+          title: chapters.title,
+          categoryTitle: categories.title,
+          recentCompletions: sql<number>`count(*)`,
+          trend: sql<string>`'up'`
+        })
+        .from(userProgress)
+        .innerJoin(chapters, eq(userProgress.chapterId, chapters.id))
+        .innerJoin(categories, eq(chapters.categoryId, categories.id))
+        .where(and(
+          eq(userProgress.completed, true),
+          sql`${userProgress.completedAt} > ${weekAgo.toISOString()}`
+        ))
+        .groupBy(chapters.id, chapters.title, categories.title)
+        .orderBy(sql`count(*) desc`)
+        .limit(10);
+
+      // Get user engagement patterns
+      const userEngagement = await db
+        .select({
+          totalUsers: sql<number>`count(distinct ${userProgress.userId})`,
+          activeUsers: sql<number>`count(distinct case when ${userProgress.completed} then ${userProgress.userId} end)`,
+          avgChaptersPerUser: sql<number>`round(count(case when ${userProgress.completed} then 1 end) * 1.0 / count(distinct ${userProgress.userId}), 1)`,
+          completionRate: sql<number>`round(count(case when ${userProgress.completed} then 1 end) * 100.0 / count(*), 1)`
+        })
+        .from(userProgress);
+
+      return {
+        chapterStats,
+        categoryStats,
+        trendingChapters,
+        userEngagement: userEngagement[0] || {
+          totalUsers: 0,
+          activeUsers: 0,
+          avgChaptersPerUser: 0,
+          completionRate: 0
+        },
+        summary: {
+          mostPopularChapter: chapterStats[0] || null,
+          leastEngagedChapters: chapterStats.slice(-3).reverse(),
+          totalEngagement: chapterStats.reduce((sum, ch) => sum + (ch.completions || 0), 0)
+        }
+      };
+    } catch (error) {
+      console.error('Error getting content analytics:', error);
+      return {
+        chapterStats: [],
+        categoryStats: [],
+        trendingChapters: [],
+        userEngagement: { totalUsers: 0, activeUsers: 0, avgChaptersPerUser: 0, completionRate: 0 },
+        summary: { mostPopularChapter: null, leastEngagedChapters: [], totalEngagement: 0 }
+      };
+    }
   }
 
   async inviteTeamMember(email: string): Promise<void> {

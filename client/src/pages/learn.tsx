@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ChapterCard } from "@/components/ChapterCard";
+import { CategoryCard } from "@/components/CategoryCard";
 import { MobileNav } from "@/components/MobileNav";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -80,153 +80,82 @@ export default function Learn() {
     };
   });
 
-  const handleChapterClick = (chapter: any) => {
-    setLocation(`/chapter/${chapter.slug}`);
+  const handleCategoryClick = (category: any) => {
+    setLocation(`/category/${category.slug}`);
   };
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] pb-20 md:pb-0">
-      {/* Header */}
-      <section className="py-16 md:py-20 px-3 md:px-5 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="hero-headline mb-6 text-3xl md:text-5xl">Your Learning Journey</h1>
-          <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto">
-            Master management through bite-sized lessons. Progress at your own pace through these three essential areas.
+      {/* Hero Header */}
+      <section className="py-20 md:py-32 px-5 md:px-10 text-center">
+        <div className="max-w-6xl mx-auto">
+          {/* Geometric accent shapes */}
+          <div className="relative">
+            <div className="absolute -top-10 -right-10 w-20 h-20 bg-[var(--accent-yellow)] opacity-20 transform rotate-45 rounded-lg hidden md:block"></div>
+            <div className="absolute -bottom-5 -left-10 w-16 h-16 bg-[var(--accent-blue)] opacity-15 rounded-full hidden md:block"></div>
+          </div>
+          
+          <h1 className="text-[clamp(48px,8vw,80px)] font-black tracking-[-2px] leading-[1.1] mb-8 text-[var(--text-primary)]">
+            Your Learning<br />Journey
+          </h1>
+          <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-3xl mx-auto leading-relaxed">
+            Master management through focused learning paths. Choose your area of growth and progress at your own pace through curated lessons and book summaries.
           </p>
         </div>
       </section>
 
-      {/* Categories */}
-      {categoriesWithChapters.map((category: any) => (
-        <section key={category.id} className="py-12 md:py-16 px-3 md:px-5">
-          <div className="max-w-6xl mx-auto">
-            {/* Category Header */}
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg mb-8 md:mb-12">
-              <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-white border-4 border-[var(--text-primary)] rounded-2xl flex items-center justify-center">
-                    <div className="w-6 h-6 bg-[var(--text-primary)] rounded-lg"></div>
-                  </div>
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-bold mb-2">{category.title}</h2>
-                    <div className="text-[var(--text-secondary)] text-base md:text-lg prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: category.description }} />
-                  </div>
-                </div>
-                <div className="lg:ml-auto text-right">
-                  <p className="text-[var(--text-secondary)] mb-2">
-                    {category.progress === category.total ? 'Complete!' : 
-                     category.progress === 0 ? 'Just getting started' :
-                     'Making progress'}
-                  </p>
-                  <div className="flex items-center gap-2 mb-2 overflow-x-auto">
-                    {Array.from({ length: category.total }, (_, i) => (
-                      <div
-                        key={i}
-                        className={`progress-dot ${
-                          i < category.progress 
-                            ? 'completed' 
-                            : i === category.progress 
-                              ? 'current' 
-                              : ''
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-lg md:text-xl font-bold">
-                    {Math.round((category.progress / category.total) * 100)}%
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Chapters Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 overflow-x-auto">
-              {category.lessons.map((chapter: any) => (
-                <ChapterCard
-                  key={chapter.id}
-                  chapter={chapter}
-                  onChapterClick={handleChapterClick}
-                />
-              ))}
-            </div>
-
-            {/* Book Summaries Section */}
-            {category.bookSummaries.length > 0 && (
-              <div className="mt-12">
-                <h3 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-3">
-                  <span className="text-2xl">📚</span>
-                  Book Summaries
-                </h3>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {category.bookSummaries.map((book: any) => (
-                    <div
-                      key={book.id}
-                      className={`chapter-card ${book.completed ? 'completed' : ''} cursor-pointer`}
-                      onClick={() => handleChapterClick(book)}
-                    >
-                      <div className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl">📖</span>
-                            <div className="status-dot ${book.completed ? 'completed' : 'current'}"></div>
-                          </div>
-                          <span className="text-sm text-[var(--text-secondary)] bg-[var(--accent-yellow)] px-2 py-1 rounded-full">
-                            {book.readingTime || 15} min read
-                          </span>
-                        </div>
-                        <h4 className="font-bold text-lg mb-2">{book.title}</h4>
-                        {book.author && (
-                          <p className="text-sm text-[var(--text-secondary)] mb-3">by {book.author}</p>
-                        )}
-                        <div className="text-sm text-[var(--text-secondary)] prose prose-sm max-w-none mb-4" 
-                             dangerouslySetInnerHTML={{ __html: book.description }} />
-                        
-                        {/* Audio Player */}
-                        {book.audioUrl && (
-                          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-lg">🎧</span>
-                              <span className="text-sm font-medium">Audio Version</span>
-                            </div>
-                            <audio 
-                              controls 
-                              className="w-full h-10"
-                              src={book.audioUrl}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              Your browser does not support the audio element.
-                            </audio>
-                          </div>
-                        )}
-
-                        {/* Key Takeaways Preview */}
-                        {book.keyTakeaways && book.keyTakeaways.length > 0 && (
-                          <div className="mt-4">
-                            <p className="text-sm font-medium mb-2">Key Takeaways:</p>
-                            <ul className="text-xs text-[var(--text-secondary)] space-y-1">
-                              {book.keyTakeaways.slice(0, 2).map((takeaway: string, index: number) => (
-                                <li key={index} className="flex items-start gap-2">
-                                  <span className="text-[var(--accent-yellow)] mt-1">•</span>
-                                  <span>{takeaway}</span>
-                                </li>
-                              ))}
-                              {book.keyTakeaways.length > 2 && (
-                                <li className="text-[var(--accent-yellow)] font-medium">
-                                  +{book.keyTakeaways.length - 2} more...
-                                </li>
-                              )}
-                            </ul>
-                          </div>
-                        )}
+      {/* Overall Progress */}
+      <section className="py-12 px-5 md:px-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-[var(--white)] p-8 md:p-12 rounded-2xl shadow-lg border border-gray-100">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-4">
+                Overall Progress
+              </h2>
+              <div className="flex items-center justify-center gap-8 flex-wrap">
+                {categoriesWithChapters.map((category: any) => {
+                  const percentage = Math.round((category.progress / (category.total || 1)) * 100);
+                  return (
+                    <div key={category.id} className="text-center">
+                      <div className="text-3xl font-black text-[var(--accent-blue)] mb-2">
+                        {percentage}%
+                      </div>
+                      <div className="text-sm font-semibold text-[var(--text-secondary)]">
+                        {category.title}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </div>
-        </section>
-      ))}
+        </div>
+      </section>
+
+      {/* Category Cards Grid */}
+      <section className="py-12 md:py-20 px-5 md:px-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-[clamp(32px,5vw,48px)] font-bold tracking-[-1px] mb-6 text-[var(--text-primary)]">
+              Choose Your Focus
+            </h2>
+            <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
+              Each category is designed to build specific management skills through practical lessons and insights from top business books.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {categoriesWithChapters.map((category: any) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+                onCategoryClick={handleCategoryClick}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
       <MobileNav />
     </div>
   );

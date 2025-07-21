@@ -412,6 +412,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate intelligent session name
+  app.post('/api/chat/session/:sessionId/generate-name', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { sessionId } = req.params;
+      const { messages } = req.body;
+      
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ message: "Messages array is required" });
+      }
+
+      // Get the conversation content (first few messages)
+      const conversationContent = messages
+        .slice(0, 6) // Take first 6 messages for name generation
+        .map(m => `${m.role}: ${m.content}`)
+        .join('\n');
+
+      // Generate a smart session name using AI
+      const namePrompt = `Based on this conversation excerpt, generate a concise, descriptive title (3-5 words max) that captures the main management topic discussed:
+
+${conversationContent}
+
+Focus on the key management challenge, skill, or topic. Examples:
+- "Giving Difficult Feedback"
+- "Team Motivation Strategies"
+- "Delegation Best Practices"
+- "New Manager Questions"
+- "Meeting Effectiveness"
+
+Return only the title, no quotes or extra text:`;
+
+      const generatedName = await getOpenAIChatResponse('You are a helpful assistant that generates concise, descriptive titles for management coaching conversations.', namePrompt);
+      
+      // Clean the name and fallback if needed
+      const cleanName = generatedName.trim().replace(/['"]/g, '').slice(0, 50) || `Management Chat ${Date.now()}`;
+      
+      // Update the session with the new name
+      const session = await storage.getUserChatSession(userId, sessionId);
+      if (session) {
+        await storage.updateChatSessionName(userId, sessionId, cleanName);
+      }
+
+      res.json({ name: cleanName });
+    } catch (error) {
+      console.error('Error generating session name:', error);
+      // Return a fallback name if AI fails
+      const fallbackName = `Management Chat ${Date.now()}`;
+      res.json({ name: fallbackName });
+    }
+  });
+
   // Helper: Find relevant chapters by keyword match
   function findRelevantChapters(query: string, chapters: any[]) {
     const q = query.toLowerCase();
@@ -437,14 +488,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Session ID is required" });
       }
 
-      // Get all chapters
+      // Get ALL chapters and categories
       const chapters = await storage.getAllChapters();
-      const relevantChapters = findRelevantChapters(message, chapters);
-      const context = relevantChapters.map(ch => `${ch.title}:\n${ch.content.slice(0, 500)}...`).join('\n\n');
-      const references = relevantChapters.map(ch => `[${ch.title}](\/chapter\/${ch.slug})`).join(', ');
+      const categories = await storage.getCategories();
+      const userProgress = await storage.getUserProgress(userId);
+      
+      // Build comprehensive context from all lessons
+      const allChaptersContext = chapters.map(ch => {
+        const category = categories.find(cat => cat.id === ch.categoryId);
+        const progress = userProgress.find(p => p.chapterId === ch.id);
+        const status = progress?.completed ? 'COMPLETED' : 'NOT_STARTED';
+        
+        return `${ch.title} (${category?.title || 'Uncategorized'}) - ${status}:\n${ch.content.slice(0, 800)}...`;
+      }).join('\n\n');
 
-      // Build system prompt and user message for OpenAI
+      // Get user's learning journey info
+      const completedChapters = userProgress.filter(p => p.completed);
+      const totalChapters = chapters.length;
+      const completionRate = Math.round((completedChapters.length / totalChapters) * 100);
+      
+      // Find what user has completed vs not completed
+      const completedTitles = completedChapters.map(p => {
+        const chapter = chapters.find(ch => ch.id === p.chapterId);
+        return chapter?.title;
+      }).filter(Boolean);
+      
+      const notCompletedChapters = chapters.filter(ch => 
+        !userProgress.some(p => p.chapterId === ch.id && p.completed)
+      );
+
+      // Also include specific relevant chapters for immediate context
+      const relevantChapters = findRelevantChapters(message, chapters);
+      const references = chapters.map(ch => `[${ch.title}](\/chapter\/${ch.slug})`).join(', ');
+
+      // Build enhanced system prompt with full context and personalization
       const systemPrompt = `You are the AI Mentor for Level Up, a management development app that transforms leadership learning into bite-sized, actionable insights. Your role is to help managers apply what they learn to real workplace situations with practical, supportive guidance.
+
+## User's Learning Context
+
+**Progress:** ${completionRate}% complete (${completedChapters.length}/${totalChapters} chapters)
+
+**Completed Chapters:** ${completedTitles.length > 0 ? completedTitles.join(', ') : 'None yet'}
+
+**Recommended Next:** ${notCompletedChapters.length > 0 ? notCompletedChapters.slice(0, 3).map(ch => ch.title).join(', ') : 'All chapters completed!'}
 
 ## Your Identity
 
@@ -453,7 +539,8 @@ You are a knowledgeable, experienced management coach who is:
 - **Practical-focused** - Every response should help the user take concrete action
 - **Framework-oriented** - You use proven management frameworks and reference specific Level Up content
 - **Conversational** - Professional but approachable, like talking to a trusted mentor
-- **Context-aware** - You remember what users have learned and can connect concepts across chapters
+- **Context-aware** - You know what users have learned and can connect concepts across chapters
+- **Personalized** - You tailor advice based on their learning progress and completed chapters
 
 ## Response Guidelines
 
@@ -461,8 +548,15 @@ You are a knowledgeable, experienced management coach who is:
 1. **Lead with practical advice** - Start with what they can do, not theory
 2. **Use specific frameworks** - Reference RACI, SBI, Total Motivation factors, etc.
 3. **Provide concrete examples** - Give specific scenarios when possible
-4. **Include chapter references** - Link to relevant Level Up content
+4. **Include chapter references** - Link to relevant Level Up content they've read or should read
 5. **End with a next step** - Always give them something actionable to try
+6. **Build on their progress** - Reference what they've already learned when relevant
+
+### Personalization Tips
+- If they've completed foundational chapters, build on those concepts
+- If they haven't started certain areas, gently suggest relevant chapters
+- Connect their question to chapters they've already completed when possible
+- Acknowledge their learning progress when encouraging them
 
 ### Tone and Style
 - Use **bold text** for key frameworks and important points
@@ -471,62 +565,11 @@ You are a knowledgeable, experienced management coach who is:
 - Avoid jargon - use simple, clear language
 - Be encouraging but realistic about challenges
 
-### When Users Ask About:
+## ALL Available Learning Content:
+${allChaptersContext}
 
-**Feedback Issues**: Reference the Feedback chapter, use SBI model, focus on behavior not person
-**Delegation Problems**: Use RACI framework, start small and scale up, distinguish between responsible and accountable
-**Team Motivation**: Apply Total Motivation factors (Purpose, Potential, Play), ask about what energizes them
-**Meeting Challenges**: Reference Having Great Meetings and 1:1s chapters, focus on structure and outcomes
-**Leadership Confidence**: Reference Foundations chapters, especially Your Number 1 Role and Growth Mindset
-
-### Response Format Example
-\`\`\`
-Great question! Based on the [Chapter Name] chapter, here are three key strategies:
-
-**1. [Framework/Concept]:** [Specific explanation]
-
-**2. [Framework/Concept]:** [Specific explanation] 
-
-**3. [Framework/Concept]:** [Specific explanation]
-
-**Quick win:** [One thing they can try this week]
-
-📖 [Relevant Chapter Link]
-\`\`\`
-
-## Scenario Practice Mode
-
-When users want to practice scenarios:
-1. Set up a realistic workplace situation
-2. Ask them what they would do
-3. Provide feedback on their approach
-4. Suggest improvements using Level Up frameworks
-5. Let them try again with your guidance
-
-## Conversation Starters
-
-Be ready to help with common management challenges:
-- "How do I give feedback to someone who gets defensive?"
-- "I want to delegate more but I'm worried about quality"
-- "My team seems disengaged - what should I do?"
-- "How can I have more influence without authority?"
-- "What should I focus on as a new manager?"
-
-## Remember
-
-- You're not just answering questions - you're developing managers
-- Always connect back to Level Up content when relevant
-- Focus on what they can control and influence
-- Help them see the bigger picture while staying practical
-- Be the mentor you wish you had when you were learning to manage
-
-Your goal is to help managers become more confident, effective leaders by applying the practical wisdom from Level Up to their real workplace challenges.
-
-## Available Learning Content:
-${context}
-
-${references ? `## Available Chapter References:
-${references}` : ''}`;
+## All Chapter References:
+${references}`;
 
       const userMessage = message;
 
@@ -568,15 +611,47 @@ ${references}` : ''}`;
       const { messages, sessionId } = req.body;
       const userId = req.user.claims.sub;
 
-      // Get all chapters for context
+      // Get ALL chapters, categories, and user progress for full context
       const chapters = await storage.getAllChapters();
-      const lastUserMessage = messages[messages.length - 1]?.content || '';
-      const relevantChapters = findRelevantChapters(lastUserMessage, chapters);
-      const context = relevantChapters.map(ch => `${ch.title}:\n${ch.content.slice(0, 500)}...`).join('\n\n');
-      const references = relevantChapters.map(ch => `[${ch.title}](\/chapter\/${ch.slug})`).join(', ');
+      const categories = await storage.getCategories();
+      const userProgress = await storage.getUserProgress(userId);
+      
+      // Build comprehensive context from all lessons
+      const allChaptersContext = chapters.map(ch => {
+        const category = categories.find(cat => cat.id === ch.categoryId);
+        const progress = userProgress.find(p => p.chapterId === ch.id);
+        const status = progress?.completed ? 'COMPLETED' : 'NOT_STARTED';
+        
+        return `${ch.title} (${category?.title || 'Uncategorized'}) - ${status}:\n${ch.content.slice(0, 800)}...`;
+      }).join('\n\n');
 
-      // Build system prompt on server-side
+      // Get user's learning journey info
+      const completedChapters = userProgress.filter(p => p.completed);
+      const totalChapters = chapters.length;
+      const completionRate = Math.round((completedChapters.length / totalChapters) * 100);
+      
+      // Find what user has completed vs not completed
+      const completedTitles = completedChapters.map(p => {
+        const chapter = chapters.find(ch => ch.id === p.chapterId);
+        return chapter?.title;
+      }).filter(Boolean);
+      
+      const notCompletedChapters = chapters.filter(ch => 
+        !userProgress.some(p => p.chapterId === ch.id && p.completed)
+      );
+
+      const references = chapters.map(ch => `[${ch.title}](\/chapter\/${ch.slug})`).join(', ');
+
+      // Build enhanced system prompt with full context and personalization
       const systemPrompt = `You are the AI Mentor for Level Up, a management development app that transforms leadership learning into bite-sized, actionable insights. Your role is to help managers apply what they learn to real workplace situations with practical, supportive guidance.
+
+## User's Learning Context
+
+**Progress:** ${completionRate}% complete (${completedChapters.length}/${totalChapters} chapters)
+
+**Completed Chapters:** ${completedTitles.length > 0 ? completedTitles.join(', ') : 'None yet'}
+
+**Recommended Next:** ${notCompletedChapters.length > 0 ? notCompletedChapters.slice(0, 3).map(ch => ch.title).join(', ') : 'All chapters completed!'}
 
 ## Your Identity
 
@@ -585,7 +660,8 @@ You are a knowledgeable, experienced management coach who is:
 - **Practical-focused** - Every response should help the user take concrete action
 - **Framework-oriented** - You use proven management frameworks and reference specific Level Up content
 - **Conversational** - Professional but approachable, like talking to a trusted mentor
-- **Context-aware** - You remember what users have learned and can connect concepts across chapters
+- **Context-aware** - You know what users have learned and can connect concepts across chapters
+- **Personalized** - You tailor advice based on their learning progress and completed chapters
 
 ## Response Guidelines
 
@@ -593,8 +669,15 @@ You are a knowledgeable, experienced management coach who is:
 1. **Lead with practical advice** - Start with what they can do, not theory
 2. **Use specific frameworks** - Reference RACI, SBI, Total Motivation factors, etc.
 3. **Provide concrete examples** - Give specific scenarios when possible
-4. **Include chapter references** - Link to relevant Level Up content
+4. **Include chapter references** - Link to relevant Level Up content they've read or should read
 5. **End with a next step** - Always give them something actionable to try
+6. **Build on their progress** - Reference what they've already learned when relevant
+
+### Personalization Tips
+- If they've completed foundational chapters, build on those concepts
+- If they haven't started certain areas, gently suggest relevant chapters
+- Connect their question to chapters they've already completed when possible
+- Acknowledge their learning progress when encouraging them
 
 ### Tone and Style
 - Use **bold text** for key frameworks and important points
@@ -603,11 +686,11 @@ You are a knowledgeable, experienced management coach who is:
 - Avoid jargon - use simple, clear language
 - Be encouraging but realistic about challenges
 
-## Available Learning Content:
-${context}
+## ALL Available Learning Content:
+${allChaptersContext}
 
-${references ? `## Available Chapter References:
-${references}` : ''}`;
+## All Chapter References:
+${references}`;
       let aiResponse = '';
       for await (const token of getChatResponseStream(messages, systemPrompt)) {
         aiResponse += token;
@@ -641,6 +724,17 @@ ${references}` : ''}`;
     } catch (error) {
       console.error("Error fetching analytics:", error);
       res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Content analytics - chapter popularity and engagement
+  app.get('/api/analytics/content', isAuthenticated, async (req: any, res) => {
+    try {
+      const contentAnalytics = await storage.getContentAnalytics();
+      res.json(contentAnalytics);
+    } catch (error) {
+      console.error("Error fetching content analytics:", error);
+      res.status(500).json({ message: "Failed to fetch content analytics" });
     }
   });
 

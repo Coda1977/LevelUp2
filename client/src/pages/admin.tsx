@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, BookOpen, FolderPlus } from "lucide-react";
+import { Plus, BookOpen, FolderPlus, TrendingUp, Users, Target, Clock } from "lucide-react";
 import { TiptapEditor } from "@/components/ui/TiptapEditor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AudioRecorder } from "@/components/ui/AudioRecorder";
@@ -88,25 +88,89 @@ export default function Admin() {
     audioUrl: "",
   });
 
-  // Auto-save draft to localStorage (only when editing, not when adding new)
+  // Enhanced auto-save state
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+
+  // Auto-save draft to localStorage for both new and existing chapters
   useEffect(() => {
-    if (showChapterForm && editChapter) {
-      const savedDraft = localStorage.getItem('chapterDraft');
-      if (savedDraft) {
-        setChapterData(JSON.parse(savedDraft));
+    if (showChapterForm) {
+      const draftKey = editChapter ? `chapterDraft_${editChapter.id}` : 'newChapterDraft';
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft && !isDirty) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          setChapterData(parsed.data);
+          setLastSaved(new Date(parsed.savedAt));
+          toast({
+            title: "Draft restored",
+            description: `Restored from ${new Date(parsed.savedAt).toLocaleTimeString()}`,
+          });
+        } catch (e) {
+          console.error('Failed to restore draft:', e);
+        }
       }
     }
-  }, [showChapterForm, editChapter]);
+  }, [showChapterForm, editChapter, isDirty]);
 
+  // Enhanced auto-save with debouncing
   useEffect(() => {
-    if (showChapterForm && editChapter) {
-      localStorage.setItem('chapterDraft', JSON.stringify(chapterData));
-    }
-  }, [chapterData, showChapterForm, editChapter]);
+    if (!showChapterForm || !isDirty) return;
+
+    const saveTimer = setTimeout(async () => {
+      setIsAutoSaving(true);
+      const draftKey = editChapter ? `chapterDraft_${editChapter.id}` : 'newChapterDraft';
+      const draftData = {
+        data: chapterData,
+        savedAt: new Date().toISOString(),
+        isEdit: !!editChapter
+      };
+      
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(draftData));
+        setLastSaved(new Date());
+        setIsDirty(false);
+      } catch (e) {
+        toast({
+          title: "Auto-save failed",
+          description: "Local storage might be full",
+          variant: "destructive"
+        });
+      } finally {
+        setIsAutoSaving(false);
+      }
+    }, 2000); // Auto-save after 2 seconds of inactivity
+
+    return () => clearTimeout(saveTimer);
+  }, [chapterData, showChapterForm, isDirty, editChapter, toast]);
+
+  // Track changes to mark as dirty
+  const updateChapterData = (updates: Partial<typeof chapterData>) => {
+    setChapterData(prev => ({ ...prev, ...updates }));
+    setIsDirty(true);
+  };
+
+  // Clear drafts on successful save
+  const clearDraft = () => {
+    const draftKey = editChapter ? `chapterDraft_${editChapter.id}` : 'newChapterDraft';
+    localStorage.removeItem(draftKey);
+    setLastSaved(null);
+    setIsDirty(false);
+  };
 
   // Fetch categories and chapters
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+  });
+
+  // Fetch content analytics
+  const { data: analytics, isLoading: analyticsLoading } = useQuery({
+    queryKey: ["/api/analytics/content"],
+    queryFn: async () => {
+      const res = await fetch("/api/analytics/content");
+      return res.json();
+    },
   });
 
   // Pagination state for chapters
@@ -161,6 +225,7 @@ export default function Admin() {
         description: "Chapter created successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/chapters"] });
+      clearDraft();
       setChapterData({
         title: "",
         slug: "",
@@ -205,6 +270,7 @@ export default function Admin() {
         description: "Chapter updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/chapters"] });
+      clearDraft();
       setChapterData({
         title: "",
         slug: "",
@@ -237,6 +303,11 @@ export default function Admin() {
 
   // Bulk selection state for chapters
   const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
+  
+  // Bulk operations state
+  const [showBulkCategoryDialog, setShowBulkCategoryDialog] = useState(false);
+  const [showBulkReorderDialog, setShowBulkReorderDialog] = useState(false);
+  const [bulkCategoryId, setBulkCategoryId] = useState("");
 
   const handleSelectChapter = (id: number, checked: boolean) => {
     setSelectedChapters((prev) =>
@@ -257,6 +328,74 @@ export default function Admin() {
       selectedChapters.forEach((id) => deleteChapterMutation.mutate(id));
       setSelectedChapters([]);
     }
+  };
+
+  // Bulk category change
+  const handleBulkCategoryChange = () => {
+    setShowBulkCategoryDialog(true);
+  };
+
+  const handleBulkCategorySubmit = async () => {
+    if (!bulkCategoryId) return;
+    
+    try {
+      await Promise.all(
+        selectedChapters.map(id => 
+          fetch(`/api/chapters/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ categoryId: parseInt(bulkCategoryId) })
+          })
+        )
+      );
+      
+      toast({
+        title: "Success",
+        description: `Updated ${selectedChapters.length} chapters`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/chapters"] });
+      setSelectedChapters([]);
+      setShowBulkCategoryDialog(false);
+      setBulkCategoryId("");
+    } catch (error) {
+      toast({
+        title: "Error", 
+        description: "Failed to update chapters",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Bulk reorder
+  const handleBulkReorder = () => {
+    setShowBulkReorderDialog(true);
+  };
+
+  // Bulk export
+  const handleBulkExport = () => {
+    const selectedChapterData = chapters.filter(c => selectedChapters.includes(c.id));
+    const exportData = {
+      chapters: selectedChapterData,
+      categories: categories,
+      exportDate: new Date().toISOString(),
+      version: "1.0"
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chapters-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export Complete",
+      description: `Exported ${selectedChapters.length} chapters`,
+    });
   };
 
   // Handle drag end for chapters
@@ -381,6 +520,9 @@ export default function Admin() {
     setEditChapter(null);
     // Clear localStorage draft for new chapters
     localStorage.removeItem('chapterDraft');
+    localStorage.removeItem('newChapterDraft');
+    setLastSaved(null);
+    setIsDirty(false);
     setChapterData({
       title: "",
       slug: "",
@@ -484,6 +626,184 @@ export default function Admin() {
         <p className="text-[var(--text-secondary)] text-lg md:text-xl">
           Add and manage learning content for Level Up
         </p>
+      </div>
+
+      {/* Content Analytics Dashboard */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+          <TrendingUp className="w-6 h-6" />
+          Content Analytics
+        </h2>
+        
+        {analyticsLoading ? (
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-4">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : analytics ? (
+          <>
+            {/* Key Metrics */}
+            <div className="grid md:grid-cols-4 gap-4 mb-6">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-[var(--text-secondary)]">Total Engagement</p>
+                      <p className="text-2xl font-bold text-[var(--accent-blue)]">{analytics.summary?.totalEngagement || 0}</p>
+                    </div>
+                    <Target className="w-8 h-8 text-[var(--accent-blue)]" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-[var(--text-secondary)]">Active Users</p>
+                      <p className="text-2xl font-bold text-[var(--accent-yellow)]">{analytics.userEngagement?.activeUsers || 0}</p>
+                    </div>
+                    <Users className="w-8 h-8 text-[var(--accent-yellow)]" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-[var(--text-secondary)]">Completion Rate</p>
+                      <p className="text-2xl font-bold text-green-600">{analytics.userEngagement?.completionRate || 0}%</p>
+                    </div>
+                    <TrendingUp className="w-8 h-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-[var(--text-secondary)]">Avg Chapters/User</p>
+                      <p className="text-2xl font-bold text-purple-600">{analytics.userEngagement?.avgChaptersPerUser || 0}</p>
+                    </div>
+                    <BookOpen className="w-8 h-8 text-purple-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Top Performing Content */}
+            <div className="grid lg:grid-cols-2 gap-6 mb-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">📈 Most Popular Chapters</CardTitle>
+                  <CardDescription>Chapters with highest completion rates</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analytics.chapterStats?.slice(0, 5).map((chapter: any, index: number) => (
+                      <div key={chapter.chapterId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm">{chapter.title}</p>
+                          <p className="text-xs text-[var(--text-secondary)]">{chapter.categoryTitle}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-[var(--accent-blue)]">{chapter.completions || 0} completions</p>
+                          <p className="text-xs text-green-600">{chapter.completionRate || 0}% rate</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">🔥 Trending This Week</CardTitle>
+                  <CardDescription>Recently completed content</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analytics.trendingChapters?.slice(0, 5).map((chapter: any, index: number) => (
+                      <div key={chapter.chapterId} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm">{chapter.title}</p>
+                          <p className="text-xs text-[var(--text-secondary)]">{chapter.categoryTitle}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">{chapter.recentCompletions} this week</p>
+                          <p className="text-xs text-green-500">↗ Trending</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Category Performance */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="text-lg">📊 Category Performance</CardTitle>
+                <CardDescription>Engagement by category</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {analytics.categoryStats?.map((category: any) => (
+                    <div key={category.categoryId} className="p-4 border border-gray-200 rounded-lg">
+                      <h4 className="font-semibold mb-2">{category.categoryTitle}</h4>
+                      <div className="space-y-1 text-sm">
+                        <p><span className="text-[var(--text-secondary)]">Chapters:</span> {category.totalChapters}</p>
+                        <p><span className="text-[var(--text-secondary)]">Completions:</span> {category.totalCompletions}</p>
+                        <p><span className="text-[var(--text-secondary)]">Users:</span> {category.totalUsers}</p>
+                        <p><span className="text-[var(--text-secondary)]">Rate:</span> <span className="font-semibold text-[var(--accent-blue)]">{category.avgCompletionRate}%</span></p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Low Engagement Alert */}
+            {analytics.summary?.leastEngagedChapters?.length > 0 && (
+              <Card className="border-orange-200 bg-orange-50">
+                <CardHeader>
+                  <CardTitle className="text-lg text-orange-800">⚠️ Need Attention</CardTitle>
+                  <CardDescription className="text-orange-700">Chapters with low engagement</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {analytics.summary.leastEngagedChapters.map((chapter: any) => (
+                      <div key={chapter.chapterId} className="flex items-center justify-between p-2 bg-white rounded border">
+                        <div>
+                          <p className="font-semibold text-sm">{chapter.title}</p>
+                          <p className="text-xs text-[var(--text-secondary)]">{chapter.categoryTitle}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-orange-600 font-bold">{chapter.completions || 0} completions</p>
+                          <p className="text-xs text-orange-500">{chapter.completionRate || 0}% rate</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        ) : (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-[var(--text-secondary)]">No analytics data available yet</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-12 md:gap-16">
@@ -646,23 +966,59 @@ export default function Admin() {
             </Button>
           </div>
 
-          {/* Bulk Actions Controls */}
-          <div className="flex items-center gap-4 mb-4">
-            <input
-              type="checkbox"
-              checked={selectedChapters.length === chapters.length && chapters.length > 0}
-              onChange={(e) => handleSelectAllChapters(e.target.checked)}
-              className="w-5 h-5 mr-2"
-            />
-            <span>Select All</span>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={selectedChapters.length === 0}
-              onClick={handleBulkDeleteChapters}
-            >
-              Delete Selected
-            </Button>
+          {/* Enhanced Bulk Actions Controls */}
+          <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={selectedChapters.length === chapters.length && chapters.length > 0}
+                onChange={(e) => handleSelectAllChapters(e.target.checked)}
+                className="w-5 h-5"
+              />
+              <span className="font-semibold">Select All ({selectedChapters.length})</span>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={selectedChapters.length === 0}
+                onClick={handleBulkCategoryChange}
+                className="text-sm"
+              >
+                Change Category
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                disabled={selectedChapters.length === 0}
+                onClick={handleBulkReorder}
+                className="text-sm"
+              >
+                Reorder
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                disabled={selectedChapters.length === 0}
+                onClick={handleBulkExport}
+                className="text-sm"
+              >
+                Export
+              </Button>
+              
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={selectedChapters.length === 0}
+                onClick={handleBulkDeleteChapters}
+                className="text-sm"
+              >
+                Delete Selected
+              </Button>
+            </div>
           </div>
 
           {categories.length === 0 && (
@@ -687,6 +1043,23 @@ export default function Admin() {
                   <DialogDescription>
                     {editChapter ? 'Update the chapter details and content' : 'Add a new learning chapter with content and media'}
                   </DialogDescription>
+                  {/* Auto-save status */}
+                  <div className="mt-2 flex items-center gap-2 text-sm">
+                    {isAutoSaving ? (
+                      <span className="text-blue-600 flex items-center gap-1">
+                        <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        Auto-saving...
+                      </span>
+                    ) : lastSaved ? (
+                      <span className="text-green-600">
+                        ✓ Last saved: {lastSaved.toLocaleTimeString()}
+                      </span>
+                    ) : isDirty ? (
+                      <span className="text-orange-600">● Unsaved changes</span>
+                    ) : (
+                      <span className="text-gray-500">Ready</span>
+                    )}
+                  </div>
                 </div>
                 <Button variant="ghost" onClick={() => setShowChapterForm(false)} className="text-2xl px-4 py-2">✕</Button>
               </div>
@@ -723,7 +1096,7 @@ export default function Admin() {
                     <Suspense fallback={<div className='p-8 text-center'>Loading editor...</div>}>
                       <TiptapEditor
                         value={chapterData.content}
-                        onChange={(html) => setChapterData({ ...chapterData, content: html })}
+                        onChange={(html) => updateChapterData({ content: html })}
                         placeholder="Main content of the chapter (rich formatting supported)"
                       />
                     </Suspense>
@@ -735,8 +1108,7 @@ export default function Admin() {
                       value={chapterData.title}
                       onChange={(e) => {
                         const title = e.target.value;
-                        setChapterData({ 
-                          ...chapterData, 
+                        updateChapterData({ 
                           title,
                           slug: generateSlug(title)
                         });
@@ -749,7 +1121,7 @@ export default function Admin() {
                     <Label htmlFor="contentType">Content Type</Label>
                     <Select 
                       value={chapterData.contentType} 
-                      onValueChange={(value: 'lesson' | 'book_summary') => setChapterData({ ...chapterData, contentType: value })}
+                      onValueChange={(value: 'lesson' | 'book_summary') => updateChapterData({ contentType: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select content type" />
@@ -858,7 +1230,7 @@ export default function Admin() {
                     <Label htmlFor="chapterDescription">Description</Label>
                     <TiptapEditor
                       value={chapterData.description}
-                      onChange={(html) => setChapterData({ ...chapterData, description: html })}
+                      onChange={(html) => updateChapterData({ description: html })}
                       placeholder="Brief description of the chapter content"
                     />
                   </div>
@@ -1040,6 +1412,88 @@ export default function Admin() {
             <div className="flex gap-3">
               <Button onClick={() => deleteChapterMutation.mutate(deleteChapterId!)} className="bg-[var(--accent-yellow)] text-[var(--text-primary)]">Delete</Button>
               <Button variant="ghost" onClick={() => setDeleteChapterId(null)}>Cancel</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Category Change Dialog */}
+      <Dialog open={showBulkCategoryDialog} onOpenChange={setShowBulkCategoryDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Category</DialogTitle>
+            <DialogDescription>
+              Update category for {selectedChapters.length} selected chapters
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="bulkCategory">New Category</Label>
+              <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={handleBulkCategorySubmit} disabled={!bulkCategoryId}>
+                Update Chapters
+              </Button>
+              <Button variant="ghost" onClick={() => setShowBulkCategoryDialog(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Reorder Dialog */}
+      <Dialog open={showBulkReorderDialog} onOpenChange={setShowBulkReorderDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reorder Chapters</DialogTitle>
+            <DialogDescription>
+              Set new chapter numbers for {selectedChapters.length} selected chapters
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {selectedChapters.map((chapterId, index) => {
+                const chapter = chapters.find(c => c.id === chapterId);
+                return (
+                  <div key={chapterId} className="flex items-center gap-3 p-2 border rounded">
+                    <Input
+                      type="number"
+                      min="1"
+                      defaultValue={chapter?.chapterNumber || index + 1}
+                      className="w-20"
+                      onBlur={(e) => {
+                        const newNumber = parseInt(e.target.value);
+                        // Could store these values in state for bulk update
+                      }}
+                    />
+                    <span className="flex-1 text-sm">{chapter?.title}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={() => {
+                toast({ title: "Feature coming soon", description: "Bulk reorder will be available in next update" });
+                setShowBulkReorderDialog(false);
+              }}>
+                Update Order
+              </Button>
+              <Button variant="ghost" onClick={() => setShowBulkReorderDialog(false)}>
+                Cancel
+              </Button>
             </div>
           </div>
         </DialogContent>
