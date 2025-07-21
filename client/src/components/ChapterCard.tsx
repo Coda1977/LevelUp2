@@ -11,18 +11,58 @@ export function ChapterCard({ chapter, onChapterClick }: ChapterCardProps) {
   const [showPreview, setShowPreview] = useState(false);
   
   // Extract key points from content (first 3 bullet points or sentences)
-  const getKeyPoints = () => {
-    if (!chapter.content) return [];
-    
-    // Try to find bullet points first
-    const bulletPoints = chapter.content.match(/[•\-\*]\s*(.+)/g);
-    if (bulletPoints && bulletPoints.length > 0) {
-      return bulletPoints.slice(0, 3).map(point => point.replace(/[•\-\*]\s*/, '').trim());
+  const getKeyPoints = (): string[] => {
+    // For book summaries, use the manual key takeaways if available
+    if (chapter.contentType === 'book_summary' && chapter.keyTakeaways && Array.isArray(chapter.keyTakeaways) && chapter.keyTakeaways.length > 0) {
+      return chapter.keyTakeaways.slice(0, 4);
     }
     
-    // Fallback to sentences
-    const sentences = chapter.content.split(/[.!?]+/).filter(s => s.trim().length > 20);
-    return sentences.slice(0, 3).map(s => s.trim());
+    if (!chapter.content) return [];
+    
+    // Remove HTML tags for better text processing
+    const cleanContent = chapter.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    // Look for structured content with clear learning points
+    const learningPatterns = [
+      // Look for numbered lists (1. 2. 3.)
+      /(?:^|\n)\s*\d+\.\s*([^.\n]+(?:\.[^.\n]*)*)/g,
+      // Look for bullet points (• - *)  
+      /(?:^|\n)\s*[•\-\*]\s*([^.\n]+(?:\.[^.\n]*)*)/g,
+      // Look for "Key" or "Important" sections
+      /(?:key|important|main|primary).*?:?\s*([^.\n]+(?:\.[^.\n]*)*)/gi,
+      // Look for sentences with actionable verbs
+      /([^.!?]*(?:learn|understand|apply|develop|build|create|manage|improve)[^.!?]*[.!?])/gi
+    ];
+    
+    let points: string[] = [];
+    for (const pattern of learningPatterns) {
+      const matches = Array.from(cleanContent.matchAll(pattern));
+      if (matches.length > 0) {
+        points = matches.map(match => match[1].trim()).filter(point => 
+          point.length > 15 && point.length < 120 && !point.includes('<')
+        );
+        if (points.length >= 3) break;
+      }
+    }
+    
+    // If no structured content found, extract meaningful sentences
+    if (points.length < 3) {
+      const sentences = cleanContent.split(/[.!?]+/)
+        .map(s => s.trim())
+        .filter(s => 
+          s.length > 25 && 
+          s.length < 120 && 
+          !s.toLowerCase().includes('click') &&
+          !s.toLowerCase().includes('here') &&
+          (s.includes('manager') || s.includes('team') || s.includes('leadership') || 
+           s.includes('learn') || s.includes('skill') || s.includes('effective'))
+        );
+      points = sentences.slice(0, 4);
+    }
+    
+    return points.slice(0, 4).map((point: string) => 
+      point.charAt(0).toUpperCase() + point.slice(1).replace(/[.!?]*$/, '')
+    );
   };
   
   const keyPoints = getKeyPoints();
@@ -75,14 +115,14 @@ export function ChapterCard({ chapter, onChapterClick }: ChapterCardProps) {
           >
             <span className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
-              Preview Key Points
+              {chapter.contentType === 'book_summary' ? 'Key Takeaways' : 'Key Learning Points'}
             </span>
             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showPreview ? 'rotate-180' : ''}`} />
           </button>
           
           {showPreview && (
             <div className="mt-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
-              {keyPoints.map((point, index) => (
+              {keyPoints.map((point: string, index: number) => (
                 <div key={index} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
                   <span className="text-[var(--accent-yellow)] mt-1 font-bold">•</span>
                   <span className="leading-relaxed">{point}</span>

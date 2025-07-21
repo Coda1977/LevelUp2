@@ -577,17 +577,21 @@ export default function Admin() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="keyTakeaways">Key Takeaways (one per line)</Label>
+                    <Label htmlFor="keyTakeaways">Key Takeaways (3-6 points, one per line)</Label>
                     <textarea
                       id="keyTakeaways"
                       value={chapterData.keyTakeaways.join('\n')}
                       onChange={(e) => setChapterData({ 
                         ...chapterData, 
-                        keyTakeaways: e.target.value.split('\n').filter(takeaway => takeaway.trim())
+                        keyTakeaways: e.target.value.split('\n').filter(takeaway => takeaway.trim()).slice(0, 6)
                       })}
-                      placeholder="Enter key takeaways, one per line..."
-                      className="w-full p-3 border border-gray-300 rounded-md min-h-[100px] resize-vertical"
+                      placeholder="Enter 3-6 key takeaways, one per line:&#10;• Clear, actionable insights from the book&#10;• Focus on practical management concepts&#10;• Keep each point concise (1-2 sentences max)"
+                      className="w-full p-3 border border-gray-300 rounded-md min-h-[120px] resize-vertical"
+                      rows={6}
                     />
+                    <div className="text-xs text-gray-500 mt-1">
+                      {chapterData.keyTakeaways.length}/6 takeaways • Focus on actionable insights that managers can apply immediately
+                    </div>
                   </div>
                 </div>
               )}
