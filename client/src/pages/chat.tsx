@@ -186,6 +186,9 @@ export default function Chat() {
     dispatch({ type: 'SET_ERROR', payload: null });
     dispatch({ type: 'SET_STREAMING', payload: '' });
     
+    // Ensure UI updates immediately by forcing a re-render
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
     const currentMessage = state.inputMessage;
     dispatch({ type: 'SET_INPUT', payload: '' });
 
@@ -287,21 +290,95 @@ export default function Chat() {
     }
   };
 
-  // Static follow-up suggestions (replace with AI-generated if desired)
-  const followUps = [
-    'Can you give me a concrete example?',
-    'What framework would you use here?',
-    'What should I try next week?'
-  ];
+  // Dynamic follow-up suggestions based on conversation context
+  const generateFollowUps = (lastMessage: string): string[] => {
+    if (!lastMessage) {
+      return [
+        'Can you give me a concrete example?',
+        'What framework would you use here?',
+        'What should I try next week?'
+      ];
+    }
 
-  // New chat handler
+    // Generate contextual follow-ups based on keywords and content
+    const message = lastMessage.toLowerCase();
+    
+    if (message.includes('team') || message.includes('management') || message.includes('delegate')) {
+      return [
+        'How do I handle resistance from team members?',
+        'What if someone on my team isn\'t meeting expectations?',
+        'How can I build more trust with my team?'
+      ];
+    }
+    
+    if (message.includes('feedback') || message.includes('performance') || message.includes('review')) {
+      return [
+        'How do I give feedback without demotivating?',
+        'What\'s the best way to document this conversation?',
+        'How often should I check in after giving feedback?'
+      ];
+    }
+    
+    if (message.includes('conflict') || message.includes('disagreement') || message.includes('tension')) {
+      return [
+        'What if the conflict escalates further?',
+        'How do I stay neutral in team conflicts?',
+        'When should I involve HR or upper management?'
+      ];
+    }
+    
+    if (message.includes('goal') || message.includes('objective') || message.includes('target')) {
+      return [
+        'How do I track progress on this goal?',
+        'What if we\'re falling behind on our targets?',
+        'How do I communicate goal changes to the team?'
+      ];
+    }
+    
+    if (message.includes('meeting') || message.includes('1:1') || message.includes('one-on-one')) {
+      return [
+        'How long should these meetings be?',
+        'What if the conversation gets off track?',
+        'How do I prepare for difficult conversations?'
+      ];
+    }
+    
+    // Default contextual questions
+    return [
+      'Can you give me a specific example for my situation?',
+      'What would you do if this approach doesn\'t work?',
+      'How do I implement this starting next week?'
+    ];
+  };
+
+  const followUps = generateFollowUps(
+    sessionMessages.length > 0 
+      ? sessionMessages[sessionMessages.length - 1]?.content || ''
+      : ''
+  );
+
+  // New chat handler - optimized for speed
   const handleNewChat = async () => {
     try {
+      // Immediately create optimistic UI
+      const newSessionId = `temp-${Date.now()}`;
+      const tempSession = {
+        id: newSessionId,
+        name: `New Chat ${state.chatNameCounter}`,
+        summary: ''
+      };
+      
+      // Optimistically update UI first for instant feedback
+      dispatch({ type: 'SET_SESSIONS', payload: [...state.sessions, tempSession] });
+      dispatch({ type: 'SELECT_SESSION', payload: newSessionId });
+      dispatch({ type: 'INCREMENT_COUNTER' });
+      
+      // Then create the actual session in background
       const res = await fetch('/api/chat/session', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: `New Chat ${state.chatNameCounter}`,
+          name: tempSession.name,
           summary: ''
         })
       });
@@ -312,17 +389,24 @@ export default function Chat() {
       
       const newSession = await res.json();
       
-      const sessionRes = await fetch('/api/chat/sessions');
-      if (!sessionRes.ok) {
-        throw new Error(`HTTP ${sessionRes.status}: Failed to load sessions`);
-      }
+      // Update with real session ID
+      const updatedSessions = state.sessions.map(s => 
+        s.id === newSessionId ? newSession : s
+      ).filter(s => s.id !== newSessionId);
+      updatedSessions.push(newSession);
       
-      const sessionList = await sessionRes.json();
-      dispatch({ type: 'SET_SESSIONS', payload: sessionList });
+      dispatch({ type: 'SET_SESSIONS', payload: updatedSessions });
       dispatch({ type: 'SELECT_SESSION', payload: newSession.id });
-      dispatch({ type: 'INCREMENT_COUNTER' });
+      
     } catch (error) {
       console.error('Failed to create new chat session:', error);
+      // Revert optimistic update on error
+      const revertedSessions = state.sessions.filter(s => !s.id.startsWith('temp-'));
+      dispatch({ type: 'SET_SESSIONS', payload: revertedSessions });
+      if (revertedSessions.length > 0) {
+        dispatch({ type: 'SELECT_SESSION', payload: revertedSessions[0].id });
+      }
+      
       toast({
         title: "Error",
         description: "Failed to create new chat session. Please try again.",
@@ -550,30 +634,6 @@ export default function Chat() {
                 {/* Typing Indicator */}
                 {state.isAITyping && !state.streamingMessage && (
                   <div className="flex gap-3 items-end animate-fade-in">
-                    <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center animate-pulse">
-                      <span className="text-white font-black">∞</span>
-                    </div>
-                    <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-md text-base leading-relaxed flex items-center gap-2">
-                      <span className="text-[var(--text-secondary)] font-medium">AI is typing</span>
-                      <span className="animate-bounce">.</span>
-                      <span className="animate-bounce delay-150">.</span>
-                      <span className="animate-bounce delay-300">.</span>
-                    </div>
-                  </div>
-                )}
-                {/* Error Message */}
-                {state.chatError && (
-                  <div className="flex gap-3 items-end animate-fade-in">
-                    <div className="w-10 h-10 bg-red-500 border-2 border-red-300 rounded-full flex items-center justify-center animate-pulse">
-                      <span className="text-white font-black">!</span>
-                    </div>
-                    <div className="bg-white border border-red-200 p-4 rounded-2xl shadow-md text-base leading-relaxed text-red-600">
-                      {state.chatError}
-                    </div>
-                  </div>
-                )}
-                {state.isAITyping && !state.streamingMessage && (
-                  <div className="flex gap-3 items-end animate-fade-in">
                     <div className="w-10 h-10 bg-[var(--accent-blue)] border-2 border-[var(--accent-yellow)] rounded-full flex items-center justify-center">
                       <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     </div>
@@ -586,6 +646,17 @@ export default function Chat() {
                         </div>
                         <span className="text-[var(--text-secondary)] text-sm font-medium animate-pulse">AI is thinking...</span>
                       </div>
+                    </div>
+                  </div>
+                )}
+                {/* Error Message */}
+                {state.chatError && (
+                  <div className="flex gap-3 items-end animate-fade-in">
+                    <div className="w-10 h-10 bg-red-500 border-2 border-red-300 rounded-full flex items-center justify-center animate-pulse">
+                      <span className="text-white font-black">!</span>
+                    </div>
+                    <div className="bg-white border border-red-200 p-4 rounded-2xl shadow-md text-base leading-relaxed text-red-600">
+                      {state.chatError}
                     </div>
                   </div>
                 )}
