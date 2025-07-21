@@ -16,7 +16,7 @@ const Chat = lazy(() => import("@/pages/chat"));
 const Chapter = lazy(() => import("@/pages/chapter"));
 const Analytics = lazy(() => import("@/pages/analytics"));
 const Team = lazy(() => import("@/pages/team"));
-const Admin = lazy(() => import("@/pages/admin"));
+const Admin = lazy(() => import("@/pages/admin-simple"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function Router() {

@@ -7,7 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, BookOpen, FolderPlus, TrendingUp } from "lucide-react";
+import { Plus, BookOpen, FolderPlus, TrendingUp, Target, Users } from "lucide-react";
+
+// Import required components
+import { TiptapEditor } from "@/components/ui/TiptapEditor";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AudioRecorder } from "@/components/ui/AudioRecorder";
+import { AudioControls } from "@/components/AudioControls";
+// import { DragDropContext, Droppable, Draggable, type DropResult } from 'react-beautiful-dnd';
 
 // Lazy load heavy components for better performance
 const ChapterEditor = lazy(() => import("@/components/admin/ChapterEditor").then(module => ({default: module.ChapterEditor})));
@@ -398,22 +405,22 @@ export default function Admin() {
   };
 
   // Handle drag end for chapters
-  const handleChapterDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    const reordered = Array.from(chapters);
-    const [removed] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, removed);
-    // Update order in state (for UI)
-    // Optionally, send new order to backend here
-    // setChapters(reordered); // If using local state
-    // Persist new order to backend
-    const order = reordered.map((chapter, idx) => ({ id: chapter.id, chapterNumber: idx + 1 }));
-    fetch('/api/chapters/reorder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order }),
-    });
-  };
+  // const handleChapterDragEnd = (result: DropResult) => {
+  //   if (!result.destination) return;
+  //   const reordered = Array.from(chapters);
+  //   const [removed] = reordered.splice(result.source.index, 1);
+  //   reordered.splice(result.destination.index, 0, removed);
+  //   // Update order in state (for UI)
+  //   // Optionally, send new order to backend here
+  //   // setChapters(reordered); // If using local state
+  //   // Persist new order to backend
+  //   const order = reordered.map((chapter, idx) => ({ id: chapter.id, chapterNumber: idx + 1 }));
+  //   fetch('/api/chapters/reorder', {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ order }),
+  //   });
+  // };
 
   // Bulk selection state for categories
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
@@ -806,11 +813,8 @@ export default function Admin() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-12 md:gap-16">
-        {/* Categories Section with Drag-and-Drop and Bulk Actions */}
-        <DragDropContext onDragEnd={handleCategoryDragEnd}>
-          <Droppable droppableId="category-list">
-            {(provided) => (
-              <div ref={provided.innerRef} {...provided.droppableProps}>
+        {/* Categories Section */}
+        <div>
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl md:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">Categories</h2>
                   <Button
