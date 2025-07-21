@@ -70,7 +70,7 @@ export default function Admin() {
     videoHeader: '',
     contentType: 'lesson' as 'lesson' | 'book_summary',
     author: '',
-    readingTime: 0,
+    readingTime: 15,
     keyTakeaways: [] as string[]
   });
 
@@ -189,7 +189,7 @@ export default function Admin() {
       videoHeader: '',
       contentType: 'lesson',
       author: '',
-      readingTime: 0,
+      readingTime: 15,
       keyTakeaways: []
     });
   };
@@ -238,7 +238,7 @@ export default function Admin() {
       videoHeader: chapter.videoHeader || '',
       contentType: chapter.contentType || 'lesson',
       author: chapter.author || '',
-      readingTime: chapter.readingTime || 0,
+      readingTime: chapter.readingTime || 15,
       keyTakeaways: chapter.keyTakeaways || []
     });
     setShowChapterForm(true);
@@ -408,8 +408,15 @@ export default function Admin() {
                         <div className="text-[var(--text-secondary)] prose prose-sm max-w-none mb-2" 
                              dangerouslySetInnerHTML={{ __html: chapter.description }} />
                         
-                        {/* Audio Status */}
-                        <div className="mt-2 flex items-center gap-2">
+                        {/* Content Type Badge */}
+                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm px-2 py-1 rounded ${
+                            chapter.contentType === 'book_summary' 
+                              ? 'text-blue-600 bg-blue-50' 
+                              : 'text-green-600 bg-green-50'
+                          }`}>
+                            {chapter.contentType === 'book_summary' ? '📚 Book Summary' : '📝 Lesson'}
+                          </span>
                           {chapter.audioUrl ? (
                             <span className="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">
                               🎧 Audio Available
@@ -420,6 +427,19 @@ export default function Admin() {
                             </span>
                           )}
                         </div>
+
+                        {/* Book Summary Details */}
+                        {chapter.contentType === 'book_summary' && chapter.author && (
+                          <div className="mt-2 text-sm text-[var(--text-secondary)]">
+                            <span className="font-medium">Author:</span> {chapter.author}
+                            {chapter.readingTime && <span className="ml-3"><span className="font-medium">Reading Time:</span> {chapter.readingTime} min</span>}
+                            {chapter.keyTakeaways && chapter.keyTakeaways.length > 0 && (
+                              <div className="mt-1">
+                                <span className="font-medium">Key Takeaways:</span> {chapter.keyTakeaways.length} points
+                              </div>
+                            )}
+                          </div>
+                        )}
                         
                         <div className="flex justify-between items-center mt-2 text-sm text-[var(--text-secondary)]">
                           <span>Chapter {chapter.chapterNumber}</span>
@@ -478,7 +498,7 @@ export default function Admin() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="categoryId">Category</Label>
                   <Select value={chapterData.categoryId.toString()} onValueChange={(value) => setChapterData({ ...chapterData, categoryId: parseInt(value) })}>
@@ -492,6 +512,21 @@ export default function Admin() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label htmlFor="contentType">Content Type</Label>
+                  <Select value={chapterData.contentType} onValueChange={(value: 'lesson' | 'book_summary') => setChapterData({ ...chapterData, contentType: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select content type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lesson">📝 Lesson</SelectItem>
+                      <SelectItem value="book_summary">📚 Book Summary</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="chapterNumber">Chapter Number</Label>
                   <Input
@@ -513,6 +548,49 @@ export default function Admin() {
                   />
                 </div>
               </div>
+
+              {/* Book Summary Fields */}
+              {chapterData.contentType === 'book_summary' && (
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">📚 Book Summary Details</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="author">Author</Label>
+                      <Input
+                        id="author"
+                        value={chapterData.author}
+                        onChange={(e) => setChapterData({ ...chapterData, author: e.target.value })}
+                        placeholder="e.g., Jim Collins"
+                        required={chapterData.contentType === 'book_summary'}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="readingTime">Reading Time (minutes)</Label>
+                      <Input
+                        id="readingTime"
+                        type="number"
+                        value={chapterData.readingTime}
+                        onChange={(e) => setChapterData({ ...chapterData, readingTime: parseInt(e.target.value) })}
+                        min="1"
+                        placeholder="15"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="keyTakeaways">Key Takeaways (one per line)</Label>
+                    <textarea
+                      id="keyTakeaways"
+                      value={chapterData.keyTakeaways.join('\n')}
+                      onChange={(e) => setChapterData({ 
+                        ...chapterData, 
+                        keyTakeaways: e.target.value.split('\n').filter(takeaway => takeaway.trim())
+                      })}
+                      placeholder="Enter key takeaways, one per line..."
+                      className="w-full p-3 border border-gray-300 rounded-md min-h-[100px] resize-vertical"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="description">Description</Label>
