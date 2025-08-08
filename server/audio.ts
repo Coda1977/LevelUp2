@@ -2,9 +2,11 @@ import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
 
-const openai = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'test_key' 
+const openai = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith('sk-')
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
+
+console.log(`Audio OpenAI configured: ${openai ? 'YES' : 'NO'}`);
 
 // Ensure audio directory exists
 const audioDir = path.join(process.cwd(), "public", "audio");

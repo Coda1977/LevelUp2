@@ -8,9 +8,9 @@ Follow these instructions when using this blueprint:
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const DEFAULT_MODEL_STR = "gpt-4o";
 
-const openai = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'test_key' 
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function getChatResponse(
   messages: Array<{role: string, content: string}>,
