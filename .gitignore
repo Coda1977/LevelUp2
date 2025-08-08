@@ -4,3 +4,21 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+server.log
+server2.log
+
+# Temporary files
+attached_assets/
+*.patch
+
+# Mock files (not needed in production)
+server/mockAuth.ts
+server/mockStorage.ts
