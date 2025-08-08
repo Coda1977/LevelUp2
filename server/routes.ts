@@ -1,18 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 
-// Use mock implementations for development, real implementations for production
-const isDevelopment = process.env.NODE_ENV === 'development';
+// Always use real implementations
+const storageModule = await import("./storage");
+const storage = storageModule.storage;
 
-const storageModule = isDevelopment 
-  ? await import("./mockStorage")
-  : await import("./storage");
-
-const storage = isDevelopment ? storageModule.mockStorage : storageModule.storage;
-
-const authModule = isDevelopment 
-  ? await import("./mockAuth")
-  : await import("./replitAuth");
+const authModule = await import("./replitAuth");
 
 const { setupAuth, isAuthenticated } = authModule;
 import { getChatResponse, getOpenAIChatResponse, getChatResponseStream } from "./openai";
