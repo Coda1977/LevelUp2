@@ -10,7 +10,6 @@ import { Suspense, lazy } from "react";
 import CategoryPage from "./pages/category";
 
 const Landing = lazy(() => import("@/pages/landing"));
-const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Learn = lazy(() => import("@/pages/learn"));
 const Chat = lazy(() => import("@/pages/chat"));
 const Chapter = lazy(() => import("@/pages/chapter"));
@@ -38,8 +37,8 @@ function Router() {
       <Navigation />
       <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="w-12 h-12 border-4 border-[var(--accent-yellow)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div></div>}>
         <Switch>
-          <Route path="/" component={!isAuthenticated ? Landing : Dashboard} />
-          <Route path="/dashboard" component={isAuthenticated ? Dashboard : Landing} />
+          <Route path="/" component={!isAuthenticated ? Landing : Learn} />
+          <Route path="/dashboard" component={isAuthenticated ? Learn : Landing} />
           <Route path="/learn" component={isAuthenticated ? Learn : Landing} />
           <Route path="/chat" component={isAuthenticated ? Chat : Landing} />
           <Route path="/analytics" component={isAuthenticated ? Analytics : Landing} />

@@ -3,11 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { CategoryCard } from "@/components/CategoryCard";
 import { MobileNav } from "@/components/MobileNav";
+import { ProgressBar } from "@/components/ProgressBar";
+import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { BookOpen, MessageSquare } from "lucide-react";
 
 export default function Learn() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -52,6 +55,10 @@ export default function Learn() {
     );
   }
 
+  // Calculate overall progress stats
+  const totalChapters = chapters.length;
+  const completedChapters = progress.filter((p: any) => p.completed).length;
+  
   const categoriesWithChapters = categories.map((category: any) => {
     const categoryChapters = chapters
       .filter((c: any) => c.categoryId === category.id)
@@ -80,37 +87,145 @@ export default function Learn() {
     };
   });
 
+  // Find chapters in progress (started but not completed)
+  const recentChapters = chapters
+    .filter((chapter: any) => {
+      const chapterProgress = progress.find((p: any) => p.chapterId === chapter.id);
+      return chapterProgress && !chapterProgress.completed;
+    })
+    .slice(0, 2);
+
+  // Calculate completed this week
+  const completedThisWeek = progress.filter((p: any) => {
+    const completedDate = new Date(p.completedAt || p.createdAt);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return p.completed && completedDate > weekAgo;
+  }).length;
+
+  const getPersonalizedGreeting = () => {
+    const hour = new Date().getHours();
+    const firstName = user?.firstName || user?.name?.split(' ')[0] || 'there';
+    
+    if (hour < 12) {
+      return `Good morning, ${firstName}!`;
+    } else if (hour < 17) {
+      return `Good afternoon, ${firstName}!`;
+    } else {
+      return `Good evening, ${firstName}!`;
+    }
+  };
+
+  const getActivityMessage = () => {
+    if (completedThisWeek > 0) {
+      return `You've completed ${completedThisWeek} chapter${completedThisWeek > 1 ? 's' : ''} this week!`;
+    } else if (recentChapters.length > 0) {
+      return "Ready to continue your learning journey?";
+    } else if (completedChapters === totalChapters) {
+      return "Congratulations! You've completed all available content.";
+    } else {
+      return "Ready to start building your management skills?";
+    }
+  };
+
   const handleCategoryClick = (category: any) => {
     setLocation(`/category/${category.slug}`);
   };
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] pb-20 md:pb-0">
-      {/* Hero Header */}
-      <section className="py-20 md:py-32 px-5 md:px-10 text-center">
+      {/* Personalized Welcome Section */}
+      <section className="py-16 md:py-20 px-5 md:px-10">
         <div className="max-w-6xl mx-auto">
-          {/* Geometric accent shapes */}
-          <div className="relative">
-            <div className="absolute -top-10 -right-10 w-20 h-20 bg-[var(--accent-yellow)] opacity-20 transform rotate-45 rounded-lg hidden md:block"></div>
-            <div className="absolute -bottom-5 -left-10 w-16 h-16 bg-[var(--accent-blue)] opacity-15 rounded-full hidden md:block"></div>
+          <div className="flex flex-col lg:flex-row gap-8 md:gap-12 items-start">
+            <div className="flex-1">
+              <p className="text-lg md:text-xl text-[var(--text-secondary)] mb-2">{getPersonalizedGreeting()}</p>
+              <h1 className="text-[clamp(32px,5vw,48px)] font-black tracking-[-1px] leading-[1.1] mb-6 text-[var(--text-primary)]">Your Learning Journey</h1>
+              <p className="text-lg text-[var(--text-secondary)] max-w-md mb-8">
+                {getActivityMessage()}
+              </p>
+              
+              {/* Quick Actions */}
+              <div className="flex flex-wrap gap-3">
+                <Button 
+                  onClick={() => recentChapters.length > 0 ? setLocation(`/chapter/${recentChapters[0].slug}`) : setLocation('/learn')}
+                  className="bg-[var(--accent-blue)] text-white px-6 py-3 rounded-full font-semibold hover:-translate-y-1 hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {recentChapters.length > 0 ? 'Continue Learning' : 'Start Learning'}
+                </Button>
+                <Button 
+                  onClick={() => setLocation('/chat')}
+                  variant="outline"
+                  className="px-6 py-3 rounded-full font-semibold border-2 border-[var(--accent-blue)] text-[var(--accent-blue)] hover:bg-[var(--accent-blue)] hover:text-white transition-all duration-300 flex items-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Ask AI Coach
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 max-w-md bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+              <h3 className="text-lg md:text-xl font-bold mb-3">Your Progress</h3>
+              <p className="text-[var(--text-secondary)] text-base mb-6">
+                You've completed {completedChapters} out of {totalChapters} chapters
+              </p>
+              <ProgressBar current={completedChapters} total={totalChapters} />
+              <p className="text-sm text-[var(--text-secondary)] font-medium">
+                {recentChapters[0] ? `Next: ${recentChapters[0].title}` : 'All chapters completed!'}
+              </p>
+            </div>
           </div>
-          
-          <h1 className="text-[clamp(48px,8vw,80px)] font-black tracking-[-2px] leading-[1.1] mb-8 text-[var(--text-primary)]">
-            Your Learning<br />Journey
-          </h1>
-          <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-3xl mx-auto leading-relaxed">
-            Master management through focused learning paths. Choose your area of growth and progress at your own pace through curated lessons and book summaries.
-          </p>
         </div>
       </section>
 
-      {/* Overall Progress */}
+      {/* Continue Learning Section */}
+      {recentChapters.length > 0 && (
+        <section className="py-12 md:py-16 px-5 md:px-10">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-8 md:mb-12">
+              <h2 className="text-[clamp(32px,5vw,48px)] font-bold tracking-[-1px] mb-4 text-[var(--text-primary)]">Continue Your Journey</h2>
+              <p className="text-[var(--text-secondary)] text-lg max-w-2xl mx-auto">
+                Pick up where you left off
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6 md:gap-8 mb-8 md:mb-12">
+              {recentChapters.map((chapter: any) => (
+                <div
+                  key={chapter.id}
+                  className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                  onClick={() => setLocation(`/chapter/${chapter.slug}`)}
+                >
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 bg-white border-4 border-[var(--text-primary)] rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-6 h-6 bg-[var(--text-primary)] rounded-full"></div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2">{chapter.title}</h3>
+                      <p className="text-[var(--text-secondary)] text-sm mb-3">
+                        {categories.find((c: any) => c.id === chapter.categoryId)?.title}
+                      </p>
+                      <p className="text-[var(--text-secondary)] text-sm">
+                        Pick up where you left off in this management essential
+                      </p>
+                    </div>
+                    <div className="bg-[var(--accent-yellow)] px-4 py-2 rounded-full text-sm font-semibold">
+                      Continue
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Overall Progress Overview */}
       <section className="py-12 px-5 md:px-10">
         <div className="max-w-6xl mx-auto">
           <div className="bg-[var(--white)] p-8 md:p-12 rounded-2xl shadow-lg border border-gray-100">
             <div className="text-center mb-6">
               <h2 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-4">
-                Overall Progress
+                Progress Overview
               </h2>
               <div className="flex items-center justify-center gap-8 flex-wrap">
                 {categoriesWithChapters.map((category: any) => {
@@ -132,15 +247,15 @@ export default function Learn() {
         </div>
       </section>
 
-      {/* Category Cards Grid */}
+      {/* Learning Categories */}
       <section className="py-12 md:py-20 px-5 md:px-10">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-[clamp(32px,5vw,48px)] font-bold tracking-[-1px] mb-6 text-[var(--text-primary)]">
-              Choose Your Focus
+              Explore All Topics
             </h2>
             <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
-              Each category is designed to build specific management skills through practical lessons and insights from top business books.
+              Master the essential skills of effective management through curated lessons and insights from top business books.
             </p>
           </div>
           

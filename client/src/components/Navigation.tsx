@@ -11,13 +11,12 @@ export function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
-    if (path === '/dashboard' && (location === '/' || location === '/dashboard')) return true;
-    if (path !== '/dashboard' && location.startsWith(path)) return true;
+    if (path === '/learn' && (location === '/' || location === '/dashboard' || location === '/learn')) return true;
+    if (path !== '/learn' && location.startsWith(path)) return true;
     return false;
   };
 
   const navLinks = [
-    { path: '/dashboard', label: 'Dashboard' },
     { path: '/learn', label: 'Learn' },
     { path: '/chat', label: 'AI Coach', className: 'ai-coach' },
     { path: '/analytics', label: 'Analytics' },

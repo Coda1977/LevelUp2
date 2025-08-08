@@ -44,11 +44,11 @@ export default function CategoryPage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 text-sm">
             <button
-              onClick={() => setLocation('/dashboard')}
+              onClick={() => setLocation('/learn')}
               className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-[var(--accent-blue)] transition-colors"
             >
               <Home className="w-4 h-4" />
-              Dashboard
+              Home
             </button>
             <span className="text-[var(--text-secondary)]">→</span>
             <button

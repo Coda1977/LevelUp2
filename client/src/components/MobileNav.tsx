@@ -5,14 +5,13 @@ export function MobileNav() {
   const [location] = useLocation();
 
   const navItems = [
-    { path: '/dashboard', label: 'Home', icon: Home },
-    { path: '/learn', label: 'Learn', icon: BookOpen },
+    { path: '/learn', label: 'Home', icon: Home },
     { path: '/chat', label: 'Chat', icon: MessageSquare },
   ];
 
   const isActive = (path: string) => {
-    if (path === '/dashboard' && (location === '/' || location === '/dashboard')) return true;
-    if (path !== '/dashboard' && location.startsWith(path)) return true;
+    if (path === '/learn' && (location === '/' || location === '/dashboard' || location === '/learn')) return true;
+    if (path !== '/learn' && location.startsWith(path)) return true;
     return false;
   };
 
