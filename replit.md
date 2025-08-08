@@ -44,7 +44,8 @@ Preferred communication style: Simple, everyday language.
 ### Content Management
 - **Structure**: Three-tier hierarchy (Categories → Chapters → Content)
 - **Categories**: Foundations, Growing the Team, Meeting People
-- **Content Types**: 5-minute articles with embedded media (Spotify podcasts, YouTube videos)
+- **Content Types**: Lessons and Book Summaries with embedded media (Spotify podcasts, YouTube videos)
+- **Book Summary Features**: Author field, reading time, key takeaways list, content type selection
 - **Progress Tracking**: User completion status with persistent storage
 - **Rich Text Editor**: TipTap is the single editor used for all content creation (category descriptions, chapter descriptions, and chapter content)
 
@@ -61,6 +62,7 @@ Preferred communication style: Simple, everyday language.
 - **Quality Settings**: Standard (faster) and HD (higher quality)
 - **Storage**: Audio files stored locally in `/public/audio/`, database stores only file paths
 - **Features**: Generate, regenerate, delete, and download audio for any chapter content
+- **Playback Controls**: Speed adjustment (0.5× to 2×), volume control, seek, play/pause
 
 ### Advanced Analytics Dashboard
 - **Metrics**: Overall progress, user activity, engagement rates

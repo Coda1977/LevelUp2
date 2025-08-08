@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Play, Pause, Volume2, VolumeX, Gauge } from "lucide-react";
 
 interface AudioPlayerProps {
   src: string;
@@ -17,6 +18,7 @@ export function AudioPlayer({ src, title, className = "" }: AudioPlayerProps) {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -75,6 +77,14 @@ export function AudioPlayer({ src, title, className = "" }: AudioPlayerProps) {
         audioRef.current.volume = 0;
         setIsMuted(true);
       }
+    }
+  };
+
+  const handleSpeedChange = (speed: string) => {
+    const newSpeed = parseFloat(speed);
+    setPlaybackRate(newSpeed);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = newSpeed;
     }
   };
 
@@ -150,6 +160,25 @@ export function AudioPlayer({ src, title, className = "" }: AudioPlayerProps) {
             onValueChange={handleVolumeChange}
             className="w-16"
           />
+        </div>
+
+        {/* Speed Controls */}
+        <div className="flex items-center gap-1">
+          <Gauge className="w-4 h-4 text-[var(--text-secondary)]" />
+          <Select value={playbackRate.toString()} onValueChange={handleSpeedChange}>
+            <SelectTrigger className="w-16 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0.5">0.5×</SelectItem>
+              <SelectItem value="0.75">0.75×</SelectItem>
+              <SelectItem value="1">1×</SelectItem>
+              <SelectItem value="1.25">1.25×</SelectItem>
+              <SelectItem value="1.5">1.5×</SelectItem>
+              <SelectItem value="1.75">1.75×</SelectItem>
+              <SelectItem value="2">2×</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>

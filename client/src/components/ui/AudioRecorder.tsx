@@ -142,9 +142,13 @@ export function AudioRecorder({ audioUrl, onAudioUrlChange }: AudioRecorderProps
             className="w-full"
             src={audioUrl}
             onClick={(e) => e.stopPropagation()}
+            controlsList="nodownload"
           >
             Your browser does not support the audio element.
           </audio>
+          <div className="mt-2 text-xs text-gray-600">
+            💡 Tip: Use the speed controls (⚙️) in the main audio player for faster playback
+          </div>
         </div>
       )}
     </div>
