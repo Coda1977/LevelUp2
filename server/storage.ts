@@ -174,50 +174,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserProgress(progress: InsertUserProgress): Promise<UserProgress> {
-    const existing = await db
-      .select()
-      .from(userProgress)
-      .where(
-        and(
-          eq(userProgress.userId, progress.userId!),
-          eq(userProgress.chapterId, progress.chapterId!)
-        )
-      );
-
-    if (existing.length > 0) {
-      const [updated] = await db
-        .update(userProgress)
-        .set({
+    // Use upsert pattern to handle insert/update in a single query
+    const [upserted] = await db
+      .insert(userProgress)
+      .values({
+        ...progress,
+        completedAt: progress.completed ? new Date() : null,
+      })
+      .onConflictDoUpdate({
+        target: [userProgress.userId, userProgress.chapterId],
+        set: {
           completed: progress.completed,
           completedAt: progress.completed ? new Date() : null,
-        })
-        .where(eq(userProgress.id, existing[0].id))
-        .returning();
-      return updated;
-    } else {
-      const [created] = await db
-        .insert(userProgress)
-        .values({
-          ...progress,
-          completedAt: progress.completed ? new Date() : null,
-        })
-        .returning();
-      return created;
-    }
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    
+    return upserted;
   }
 
   async getCategoryProgress(userId: string, categoryId: number): Promise<number> {
-    const categoryChapters = await this.getChaptersByCategory(categoryId);
-    const userProgressData = await db
-      .select()
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
       .from(userProgress)
-      .where(eq(userProgress.userId, userId));
-
-    const completedChapters = userProgressData.filter(p => 
-      p.completed && categoryChapters.some(c => c.id === p.chapterId)
-    );
-
-    return completedChapters.length;
+      .innerJoin(chapters, eq(userProgress.chapterId, chapters.id))
+      .where(and(
+        eq(userProgress.userId, userId),
+        eq(chapters.categoryId, categoryId),
+        eq(userProgress.completed, true)
+      ));
+    
+    return result[0]?.count || 0;
   }
 
   async createSharedChapter(shared: InsertSharedChapter): Promise<SharedChapter> {
@@ -245,21 +233,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateChatSession(userId: string, sessionId: string, messages: any[]): Promise<ChatSession> {
-    const existing = await db
-      .select()
-      .from(chatSessions)
+    // Try to update first - if no rows affected, create new session
+    const [updated] = await db
+      .update(chatSessions)
+      .set({
+        messages,
+        updatedAt: new Date(),
+      })
       .where(and(eq(chatSessions.userId, userId), eq(chatSessions.sessionId, sessionId)))
-      .limit(1);
+      .returning();
 
-    if (existing.length > 0) {
-      const [updated] = await db
-        .update(chatSessions)
-        .set({
-          messages,
-          updatedAt: new Date(),
-        })
-        .where(eq(chatSessions.id, existing[0].id))
-        .returning();
+    if (updated) {
       return updated;
     } else {
       return await this.createChatSession({ 

@@ -8,6 +8,7 @@ import {
   serial,
   integer,
   boolean,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -89,10 +90,12 @@ export const userProgress = pgTable("user_progress", {
   completed: boolean("completed").default(false),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   userIdIdx: index("user_progress_user_id_idx").on(table.userId),
   chapterIdIdx: index("user_progress_chapter_id_idx").on(table.chapterId),
-  userChapterIdx: index("user_progress_user_chapter_idx").on(table.userId, table.chapterId), // Unique queries
+  userChapterIdx: index("user_progress_user_chapter_idx").on(table.userId, table.chapterId), // Regular index
+  userChapterUnique: unique("user_progress_user_chapter_unique").on(table.userId, table.chapterId), // Unique constraint for upsert
   completedIdx: index("user_progress_completed_idx").on(table.completed),
   completedAtIdx: index("user_progress_completed_at_idx").on(table.completedAt),
   userCompletedIdx: index("user_progress_user_completed_idx").on(table.userId, table.completed), // Analytics queries
@@ -195,6 +198,7 @@ export const insertChapterSchema = createInsertSchema(chapters).omit({
 export const insertUserProgressSchema = createInsertSchema(userProgress).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export const insertSharedChapterSchema = createInsertSchema(sharedChapters).omit({
