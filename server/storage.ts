@@ -19,6 +19,7 @@ import {
   type InsertChatSession,
 } from "@shared/schema";
 import { db } from "./db";
+import { DatabaseStorage as MockStorage } from "./mockStorage";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 
 export interface IStorage {
@@ -68,6 +69,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
+    if (!db) throw new Error("Database not configured");
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -445,4 +447,4 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = db ? new DatabaseStorage() : new MockStorage();

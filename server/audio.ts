@@ -2,7 +2,9 @@ import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'test_key' 
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 // Ensure audio directory exists
 const audioDir = path.join(process.cwd(), "public", "audio");
@@ -11,6 +13,12 @@ if (!fs.existsSync(audioDir)) {
 }
 
 export async function generateAudio(text: string, chapterId: number, voice: string = "alloy"): Promise<string> {
+  // Return demo audio path if OpenAI is not configured
+  if (!openai) {
+    console.log(`Audio generation disabled - OpenAI API key not configured`);
+    throw new Error("Audio generation requires valid OpenAI API key");
+  }
+
   try {
     const filename = `chapter-${chapterId}-${Date.now()}.mp3`;
     const filePath = path.join(audioDir, filename);
@@ -40,6 +48,12 @@ export async function generateAudio(text: string, chapterId: number, voice: stri
 }
 
 export async function generateHighQualityAudio(text: string, chapterId: number, voice: string = "alloy"): Promise<string> {
+  // Return demo audio path if OpenAI is not configured
+  if (!openai) {
+    console.log(`HD audio generation disabled - OpenAI API key not configured`);
+    throw new Error("Audio generation requires valid OpenAI API key");
+  }
+
   try {
     const filename = `chapter-${chapterId}-hd-${Date.now()}.mp3`;
     const filePath = path.join(audioDir, filename);

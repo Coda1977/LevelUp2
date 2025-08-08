@@ -8,14 +8,28 @@ Follow these instructions when using this blueprint:
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const DEFAULT_MODEL_STR = "gpt-4o";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'test_key' 
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 export async function getChatResponse(
   messages: Array<{role: string, content: string}>,
   systemPrompt?: string
 ): Promise<string> {
+  // Return demo response if OpenAI is not configured
+  if (!openai) {
+    return `Thanks for your message! I'm a management development AI assistant. 
+
+Since this is a demo environment, I can't provide real-time responses, but in the full version I would help you with:
+
+• Leadership challenges and team management
+• Delegation strategies and feedback techniques  
+• Meeting efficiency and communication skills
+• Applying Level Up concepts to real situations
+
+To enable full AI functionality, configure a valid OpenAI API key in your environment.`;
+  }
+
   try {
     const formattedMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
     
@@ -48,6 +62,21 @@ export async function getChatResponse(
 }
 
 export async function getOpenAIChatResponse(systemPrompt: string, userMessage: string): Promise<string> {
+  // Return demo response if OpenAI is not configured
+  if (!openai) {
+    return `Thanks for asking about "${userMessage}". 
+
+I'm your Level Up management development assistant. In a full production environment with API access, I would provide detailed guidance on this topic based on the Level Up curriculum.
+
+For now, here are some general management tips:
+• Focus on clear communication with your team
+• Set specific, measurable goals  
+• Provide regular feedback and support
+• Lead by example and stay consistent
+
+Configure a valid OpenAI API key to unlock full conversational AI features.`;
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: DEFAULT_MODEL_STR,
@@ -76,6 +105,31 @@ export async function* getChatResponseStream(
   messages: Array<{role: string, content: string}>,
   systemPrompt?: string
 ): AsyncGenerator<string, void, unknown> {
+  // Return demo streaming response if OpenAI is not configured
+  if (!openai) {
+    const demoResponse = `Thanks for your message! I'm your Level Up management development assistant.
+
+Since this is a demo environment, I can't provide real-time AI responses, but in the full version I would help you with:
+
+• **Leadership Challenges**: Navigate difficult team situations with proven frameworks
+• **Delegation Mastery**: Learn when and how to delegate effectively  
+• **Feedback Techniques**: Give constructive feedback that motivates growth
+• **Meeting Optimization**: Run more productive and engaging meetings
+• **Communication Skills**: Build trust and clarity in all your interactions
+
+The Level Up curriculum includes chapters on delegation, team building, performance management, and strategic thinking - all designed to make you a more effective leader.
+
+To unlock full conversational AI features, configure a valid OpenAI API key in your environment.`;
+
+    // Simulate streaming by yielding chunks
+    const words = demoResponse.split(' ');
+    for (const word of words) {
+      yield word + ' ';
+      await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to simulate streaming
+    }
+    return;
+  }
+
   try {
     const formattedMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
     if (systemPrompt) {
